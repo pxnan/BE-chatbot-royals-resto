@@ -2,6 +2,11 @@ import pickle
 import pandas as pd
 from preprocessing import preprocess
 from flask import Flask, request, jsonify
+from flask_cors import CORS
+
+# ===== Inisialisasi Flask =====
+app = Flask(__name__)
+CORS(app, origins="*")
 
 # Load model kategori
 with open('model/tfidf_vectorizer_category.pkl', 'rb') as f:
@@ -21,8 +26,6 @@ for cat in df['kategori'].unique():
         answer_models[cat] = pickle.load(f)
     with open(f'model/vectorizer_answer_{cat}.pkl', 'rb') as f:
         answer_vectorizers[cat] = pickle.load(f)
-
-app = Flask(__name__)
 
 @app.route('/chat', methods=['POST'])
 def chat():
