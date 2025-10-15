@@ -5,18 +5,19 @@ from preprocessing import preprocess
 from flask import Flask, request, jsonify
 from flask_cors import CORS
 
-# ===================== Koneksi Database MySQL =====================
-db = mysql.connector.connect(
-    host="localhost",
-    user="root",             # ubah sesuai user MySQL kamu
-    password="",             # ubah sesuai password MySQL kamu
-    database="chatbot_royals_resto"
-)
-cursor = db.cursor(dictionary=True)  # pakai dictionary=True agar hasil query jadi dict
-
 # ===================== Inisialisasi Flask =====================
 app = Flask(__name__)
 CORS(app, origins="*")
+
+# ===================== Fungsi Koneksi Database MySQL =====================
+def get_db_connection():
+    """Buat koneksi baru ke database setiap request"""
+    return mysql.connector.connect(
+        host="localhost",
+        user="root",             # ubah sesuai user MySQL kamu
+        password="",             # ubah sesuai password MySQL kamu
+        database="chatbot_royals_resto"
+    )
 
 # ===================== Load Model Kategori =====================
 with open('model/tfidf_vectorizer_category.pkl', 'rb') as f:
@@ -43,9 +44,13 @@ for cat in df['kategori'].unique():
 # ===================== Fungsi Simpan Pertanyaan Tidak Dikenal =====================
 def save_unknown_question(question):
     try:
+        conn = get_db_connection()
+        cursor = conn.cursor()
         query = "INSERT INTO pertanyaan_unknow (pertanyaan) VALUES (%s)"
         cursor.execute(query, (question,))
-        db.commit()
+        conn.commit()
+        cursor.close()
+        conn.close()
         print(f"[DB] Pertanyaan tidak dikenal disimpan: {question}")
     except Exception as e:
         print(f"[DB ERROR] {e}")
@@ -104,13 +109,24 @@ def chat():
 @app.route('/pertanyaan-unknown', methods=['GET'])
 def get_unknown_questions():
     try:
+        conn = get_db_connection()
+        cursor = conn.cursor(dictionary=True)
+
         cursor.execute("SELECT * FROM pertanyaan_unknow ORDER BY id DESC")
         data = cursor.fetchall()
+
+        # Pastikan commit agar data terbaru terbaca
+        conn.commit()
+
+        cursor.close()
+        conn.close()
+
         return jsonify(data)
+
     except Exception as e:
         print(f"[DB ERROR] {e}")
         return jsonify({'error': 'Gagal mengambil data dari database'}), 500
 
-# ===================== Run Server =====================
+# ===================== Jalankan Server =====================
 if __name__ == '__main__':
     app.run(debug=True)
