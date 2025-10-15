@@ -1,32 +1,56 @@
 import pickle
 import pandas as pd
+import mysql.connector
 from preprocessing import preprocess
 from flask import Flask, request, jsonify
 from flask_cors import CORS
 
-# ===== Inisialisasi Flask =====
+# ===================== Koneksi Database MySQL =====================
+db = mysql.connector.connect(
+    host="localhost",
+    user="root",             # ubah sesuai user MySQL kamu
+    password="",             # ubah sesuai password MySQL kamu
+    database="chatbot_royals_resto"
+)
+cursor = db.cursor(dictionary=True)  # pakai dictionary=True agar hasil query jadi dict
+
+# ===================== Inisialisasi Flask =====================
 app = Flask(__name__)
 CORS(app, origins="*")
 
-# Load model kategori
+# ===================== Load Model Kategori =====================
 with open('model/tfidf_vectorizer_category.pkl', 'rb') as f:
     vectorizer_cat = pickle.load(f)
 with open('model/svm_model_category.pkl', 'rb') as f:
     model_cat = pickle.load(f)
 
-# Load dataset
+# ===================== Load Dataset =====================
 df = pd.read_csv('data/dataset.csv')
 df['processed'] = df['pertanyaan'].apply(preprocess)
 
-# Load semua model jawaban per kategori
+# ===================== Load Model Jawaban per Kategori =====================
 answer_models = {}
 answer_vectorizers = {}
 for cat in df['kategori'].unique():
-    with open(f'model/svm_model_answer_{cat}.pkl', 'rb') as f:
-        answer_models[cat] = pickle.load(f)
-    with open(f'model/vectorizer_answer_{cat}.pkl', 'rb') as f:
-        answer_vectorizers[cat] = pickle.load(f)
+    try:
+        with open(f'model/svm_model_answer_{cat}.pkl', 'rb') as f:
+            answer_models[cat] = pickle.load(f)
+        with open(f'model/vectorizer_answer_{cat}.pkl', 'rb') as f:
+            answer_vectorizers[cat] = pickle.load(f)
+    except FileNotFoundError:
+        print(f"[WARNING] Model untuk kategori '{cat}' tidak ditemukan.")
 
+# ===================== Fungsi Simpan Pertanyaan Tidak Dikenal =====================
+def save_unknown_question(question):
+    try:
+        query = "INSERT INTO pertanyaan_unknow (pertanyaan) VALUES (%s)"
+        cursor.execute(query, (question,))
+        db.commit()
+        print(f"[DB] Pertanyaan tidak dikenal disimpan: {question}")
+    except Exception as e:
+        print(f"[DB ERROR] {e}")
+
+# ===================== Endpoint Chat =====================
 @app.route('/chat', methods=['POST'])
 def chat():
     user_input = request.json.get('pertanyaan', '')
@@ -35,25 +59,37 @@ def chat():
 
     processed_input = preprocess(user_input)
 
-    # ===== Stage 1: Prediksi kategori =====
+    # ===== Stage 1: Prediksi Kategori =====
     X_input_cat = vectorizer_cat.transform([processed_input])
     predicted_category = model_cat.predict(X_input_cat)[0]
 
-    # ===== Stage 2: Prediksi jawaban =====
+    # Pastikan kategori punya model jawaban
+    if predicted_category not in answer_models:
+        save_unknown_question(user_input)
+        return jsonify({
+            'pertanyaan': user_input,
+            'kategori': predicted_category,
+            'jawaban': "Mohon maaf, saya belum mengerti pertanyaan Anda."
+        })
+
+    # ===== Stage 2: Prediksi Jawaban =====
     vectorizer_answer = answer_vectorizers[predicted_category]
     model_answer = answer_models[predicted_category]
 
     X_input_answer = vectorizer_answer.transform([processed_input])
 
-    # Gunakan decision function SVM untuk confidence
+    # ===== Cek confidence dari SVM =====
     try:
         scores = model_answer.decision_function(X_input_answer)
         max_score = max(scores[0]) if len(scores.shape) > 1 else scores[0]
-    except:
+    except Exception:
         max_score = 0
 
-    threshold = 0.0  # Bisa disesuaikan dataset
+    threshold = 0.0  # bisa kamu sesuaikan, makin tinggi makin ketat
+
+    # ===== Jika confidence rendah, simpan ke database =====
     if max_score < threshold:
+        save_unknown_question(user_input)
         predicted_answer = "Mohon maaf, saya belum mengerti pertanyaan Anda."
     else:
         predicted_answer = model_answer.predict(X_input_answer)[0]
@@ -64,5 +100,17 @@ def chat():
         'jawaban': predicted_answer
     })
 
+# ===================== Endpoint Ambil Semua Pertanyaan Tidak Dikenal =====================
+@app.route('/pertanyaan-unknown', methods=['GET'])
+def get_unknown_questions():
+    try:
+        cursor.execute("SELECT * FROM pertanyaan_unknow ORDER BY id DESC")
+        data = cursor.fetchall()
+        return jsonify(data)
+    except Exception as e:
+        print(f"[DB ERROR] {e}")
+        return jsonify({'error': 'Gagal mengambil data dari database'}), 500
+
+# ===================== Run Server =====================
 if __name__ == '__main__':
     app.run(debug=True)
