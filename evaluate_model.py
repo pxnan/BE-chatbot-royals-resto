@@ -55,4 +55,4 @@ accuracy = accuracy_score(y_test, y_pred) * 100
 print(f"Accuracy: {accuracy:.2f}%\n")  # tampilkan 2 desimal
 
 print("Classification Report:\n")
-print(classification_report(y_test, y_pred, target_names=model_cat.classes_))
+print(classification_report(y_test, y_pred))
