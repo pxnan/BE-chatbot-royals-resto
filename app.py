@@ -1,7 +1,7 @@
 import pickle
 import pandas as pd
 import mysql.connector
-from preprocessing import preprocess
+from app.utils.preprocessing import preprocess
 from flask import Flask, request, jsonify
 from flask_cors import CORS
 

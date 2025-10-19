@@ -1,6 +1,6 @@
 import pandas as pd
 import pickle
-from preprocessing import preprocess
+from app.utils.preprocessing import preprocess
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.svm import LinearSVC
 
