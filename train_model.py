@@ -3,19 +3,11 @@ import pickle
 import os
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.svm import LinearSVC
+from preprocessing import preprocess
 
 
 # ===== Load Dataset =====
 df = pd.read_csv('data/dataset.csv')
-
-# Preprocessing sederhana (gantikan dengan fungsi preprocessing Anda)
-def preprocess(text):
-    if not isinstance(text, str):
-        return ""
-    # Contoh preprocessing sederhana
-    text = text.lower().strip()
-    # Tambahkan preprocessing lain sesuai kebutuhan
-    return text
 
 # Preprocessing
 df['processed'] = df['pertanyaan'].astype(str).apply(preprocess)

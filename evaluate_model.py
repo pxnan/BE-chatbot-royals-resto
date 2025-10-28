@@ -3,7 +3,7 @@ import pandas as pd
 from sklearn.metrics import confusion_matrix, classification_report, accuracy_score
 import seaborn as sns
 import matplotlib.pyplot as plt
-from app.utils.preprocessing import preprocess
+from preprocessing import preprocess
 
 # ===== Load model kategori =====
 with open('model/tfidf_vectorizer_category.pkl', 'rb') as f:
