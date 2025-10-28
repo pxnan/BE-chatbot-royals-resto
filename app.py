@@ -1,9 +1,10 @@
 import pickle
 import pandas as pd
 import mysql.connector
-from app.utils.preprocessing import preprocess
+from preprocessing import preprocess
 from flask import Flask, request, jsonify
 from flask_cors import CORS
+import os
 
 # ===================== Inisialisasi Flask =====================
 app = Flask(__name__)
@@ -29,17 +30,16 @@ with open('model/svm_model_category.pkl', 'rb') as f:
 df = pd.read_csv('data/dataset.csv')
 df['processed'] = df['pertanyaan'].apply(preprocess)
 
-# ===================== Load Model Jawaban per Kategori =====================
-answer_models = {}
-answer_vectorizers = {}
+# ===================== Load Model QA per Kategori (YANG BARU) =====================
+qa_models = {}
 for cat in df['kategori'].unique():
     try:
-        with open(f'model/svm_model_answer_{cat}.pkl', 'rb') as f:
-            answer_models[cat] = pickle.load(f)
-        with open(f'model/vectorizer_answer_{cat}.pkl', 'rb') as f:
-            answer_vectorizers[cat] = pickle.load(f)
-    except FileNotFoundError:
-        print(f"[WARNING] Model untuk kategori '{cat}' tidak ditemukan.")
+        model_path = f'model/svm_qa_model_{cat}.pkl'
+        os.path.exists(model_path)
+        with open(model_path, 'rb') as f:
+            qa_models[cat] = pickle.load(f)
+    except Exception as e:
+        print(f"❌ Error loading model for {cat}: {e}")
 
 # ===================== Fungsi Simpan Pertanyaan Tidak Dikenal =====================
 def save_unknown_question(question):
@@ -51,7 +51,6 @@ def save_unknown_question(question):
         conn.commit()
         cursor.close()
         conn.close()
-        print(f"[DB] Pertanyaan tidak dikenal disimpan: {question}")
     except Exception as e:
         print(f"[DB ERROR] {e}")
 
@@ -68,8 +67,8 @@ def chat():
     X_input_cat = vectorizer_cat.transform([processed_input])
     predicted_category = model_cat.predict(X_input_cat)[0]
 
-    # Pastikan kategori punya model jawaban
-    if predicted_category not in answer_models:
+    # Pastikan kategori punya model QA
+    if predicted_category not in qa_models:
         save_unknown_question(user_input)
         return jsonify({
             'pertanyaan': user_input,
@@ -77,27 +76,48 @@ def chat():
             'jawaban': "Mohon maaf, saya belum mengerti pertanyaan Anda."
         })
 
-    # ===== Stage 2: Prediksi Jawaban =====
-    vectorizer_answer = answer_vectorizers[predicted_category]
-    model_answer = answer_models[predicted_category]
+    # ===== Stage 2: Prediksi Jawaban dengan Model QA Baru =====
+    category_data = qa_models[predicted_category]
+    model_qa = category_data['model']
+    vectorizer_qa = category_data['vectorizer']
+    answers = category_data['answers']
 
-    X_input_answer = vectorizer_answer.transform([processed_input])
-
+    # Transform pertanyaan user dengan vectorizer QA
+    X_input_qa = vectorizer_qa.transform([processed_input])
+    
     # ===== Cek confidence dari SVM =====
     try:
-        scores = model_answer.decision_function(X_input_answer)
-        max_score = max(scores[0]) if len(scores.shape) > 1 else scores[0]
-    except Exception:
+        # Dapatkan decision function scores
+        scores = model_qa.decision_function(X_input_qa)
+        
+        # Untuk multi-class, cari score tertinggi
+        if len(scores.shape) > 1:
+            # Multi-class: ambil score tertinggi dari semua class
+            max_score = max(scores[0])
+        else:
+            # Binary classification: gunakan score langsung
+            max_score = scores[0]
+    except Exception as e:
+        print(f"Error calculating confidence: {e}")
         max_score = 0
 
-    threshold = 0.0  # bisa kamu sesuaikan, makin tinggi makin ketat
+    threshold = 0.0  # bisa disesuaikan, makin tinggi makin ketat
 
     # ===== Jika confidence rendah, simpan ke database =====
     if max_score < threshold:
         save_unknown_question(user_input)
         predicted_answer = "Mohon maaf, saya belum mengerti pertanyaan Anda."
     else:
-        predicted_answer = model_answer.predict(X_input_answer)[0]
+        # Prediksi indeks jawaban menggunakan SVM
+        predicted_index = model_qa.predict(X_input_qa)[0]
+        
+        # Validasi indeks dan ambil jawaban
+        if 0 <= predicted_index < len(answers):
+            predicted_answer = answers[predicted_index]
+        else:
+            # Jika indeks tidak valid, simpan sebagai pertanyaan tidak dikenal
+            save_unknown_question(user_input)
+            predicted_answer = "Mohon maaf, saya belum mengerti pertanyaan Anda."
 
     return jsonify({
         'pertanyaan': user_input,
