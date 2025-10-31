@@ -77,18 +77,18 @@ def chat():
         scores = np.array([0])
 
     # Ambil top-N pertanyaan mirip (misal 3 teratas)
-    top_n = 2
+    top_n = 5
     top_indices = np.argsort(scores)[::-1][:top_n]
     top_scores = scores[top_indices]
 
     # ===== Deteksi Ambiguitas =====
-    ambiguity_threshold = 0.10
+    ambiguity_threshold = 0.5
     if len(top_scores) > 1 and abs(top_scores[0] - top_scores[1]) < ambiguity_threshold:
         similar_questions = [pertanyaan_list[i] for i in top_indices]
         return jsonify({
             'pertanyaan': user_input,
             'opsi_pertanyaan': similar_questions,
-            'jawaban': "Pertanyaan yang Anda maksud yang mana?",
+            'jawaban': "Pertanyaan mana yang kamu maksud?",
             'status': 'ambigu'
         })
 
