@@ -1,10 +1,8 @@
 import pandas as pd
 import pickle
-import os
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.svm import LinearSVC
 from preprocessing import preprocess
-
 
 # ===== Load Dataset =====
 df = pd.read_csv('data/dataset.csv')
@@ -30,33 +28,27 @@ with open('model/svm_model_category.pkl', 'wb') as f:
 
 print("✅ Stage 1: Model kategori berhasil dilatih dan disimpan!")
 
-# ===== Stage 2: Train SVM untuk matching pertanyaan dalam setiap kategori =====
-for cat in df['kategori'].unique():
-    df_cat = df[df['kategori'] == cat]
-    
-    # Untuk setiap kategori, kita train model SVM yang memetakan pertanyaan ke indeks jawaban
-    X_qa = df_cat['processed']
-    
-    # Label adalah indeks dari jawaban
-    y_qa = list(range(len(df_cat)))
-    
-    vectorizer_qa = TfidfVectorizer()
-    X_qa_tfidf = vectorizer_qa.fit_transform(X_qa)
-    
-    model_qa = LinearSVC()
-    model_qa.fit(X_qa_tfidf, y_qa)
-    
-    # Simpan model, vectorizer, dan mapping jawaban untuk kategori ini
-    category_data = {
-        'model': model_qa,
-        'vectorizer': vectorizer_qa,
-        'answers': df_cat['jawaban'].tolist(),
-        'questions': df_cat['pertanyaan'].tolist()
-    }
-    
-    with open(f'model/svm_qa_model_{cat}.pkl', 'wb') as f:
-        pickle.dump(category_data, f)
-    
-    print(f"✅ Model untuk kategori '{cat}' berhasil disimpan!")
+# ===== Stage 2: Train SVM QA (semua pertanyaan dalam satu model) =====
+X_qa = df['processed']
+# Label adalah indeks jawaban
+y_qa = list(range(len(df)))
 
-print("✅ Stage 2: Semua model QA per kategori berhasil dilatih dan disimpan!")
+vectorizer_qa = TfidfVectorizer()
+X_qa_tfidf = vectorizer_qa.fit_transform(X_qa)
+
+model_qa = LinearSVC()
+model_qa.fit(X_qa_tfidf, y_qa)
+
+# Simpan semua data QA dalam satu file, termasuk kategori
+qa_data = {
+    'model': model_qa,
+    'vectorizer': vectorizer_qa,
+    'answers': df['jawaban'].tolist(),
+    'questions': df['pertanyaan'].tolist(),
+    'categories': df['kategori'].tolist()  # ✅ tambahkan kategori
+}
+
+with open('model/model_qa.pkl', 'wb') as f:
+    pickle.dump(qa_data, f)
+
+print("✅ Stage 2: Model QA semua pertanyaan beserta kategori berhasil dilatih dan disimpan di 'model_qa.pkl'!")
