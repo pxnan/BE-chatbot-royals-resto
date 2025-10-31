@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="id">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>API Chatbot Royal's Resto</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: black;
+            color: white;
+            padding: 20px;
+        }
+
+        h1,
+        h2 {
+            color: oklch(62.3% 0.214 259.815);
+        }
+
+        pre {
+            background-color: oklch(26.9% 0 0);
+            padding: 10px;
+            border-radius: 5px;
+            overflow-x: auto;
+        }
+
+        code {
+            color: white;
+        }
+
+        a {
+            color: #38bdf8;
+            text-decoration: none;
+        }
+
+        a:hover {
+            text-decoration: underline;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: auto;
+        }
+
+        .section {
+            margin-bottom: 40px;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <h1>API Chatbot Royal's Resto</h1>
+        <p>Selamat datang di API Chatbot Royal's Resto. API ini menyediakan endpoint untuk berinteraksi dengan chatbot
+            dan mengambil pertanyaan yang tidak dikenal.</p>
+
+        <div class="section">
+            <h2># Endpoint Chat</h2>
+            <p><strong>URL:</strong> <code>/chat</code></p>
+            <p><strong>Method:</strong> POST</p>
+            <p><strong>Request JSON:</strong></p>
+            <pre>
+{
+    "pertanyaan": "Apa menu favorit di Royal's Resto?"
+}
+            </pre>
+            <p><strong>Response JSON (jawaban normal):</strong></p>
+            <pre>
+{
+    "pertanyaan": "Apa menu favorit di Royal's Resto?",
+    "jawaban": "Menu favorit kami adalah Nasi Goreng Royal.",
+    "status": "ok"
+}
+            </pre>
+            <p><strong>Response JSON (ambigu):</strong></p>
+            <pre>
+{
+    "pertanyaan": "resto",
+    "opsi_pertanyaan": [
+        "Apa jam buka Royal's Resto?",
+        "Dimana lokasi Royal's Resto?"
+    ],
+    "jawaban": "Pertanyaan mana yang kamu maksud?",
+    "status": "ambigu"
+}
+            </pre>
+        </div>
+
+        <div class="section">
+            <h2># Endpoint Pertanyaan Tidak Dikenal</h2>
+            <p><strong>URL:</strong> <code>/pertanyaan-unknown</code></p>
+            <p><strong>Method:</strong> GET</p>
+            <p><strong>Query Parameter:</strong></p>
+            <ul>
+                <li><code>page</code> (opsional, default=1) — nomor halaman untuk pagination</li>
+            </ul>
+            <p><strong>Contoh Request:</strong></p>
+            <pre>
+GET /api/pertanyaan-unknown?page=2
+            </pre>
+            <p><strong>Response JSON:</strong></p>
+            <pre>
+{
+    "page": 2,
+    "per_page": 10,
+    "total_data": 35,
+    "total_pages": 4,
+    "data": [
+        { "id": 11, "pertanyaan": "Pertanyaan yang belum dipahami 11" },
+        { "id": 12, "pertanyaan": "Pertanyaan yang belum dipahami 12" }
+    ]
+}
+            </pre>
+        </div>
+
+        <div class="section">
+            <h2># Informasi Tambahan</h2>
+            <ul>
+                <li>Pastikan Content-Type pada request POST adalah <code>application/json</code>.</li>
+                <li>Jika pertanyaan tidak dikenali oleh chatbot, pertanyaan akan otomatis disimpan di database.</li>
+                <li>Gunakan pagination untuk mengambil semua pertanyaan yang tidak dikenal.</li>
+            </ul>
+        </div>
+
+        <footer>
+            <p>Prasasti M Fernanday &copy; 2025</p>
+        </footer>
+    </div>
+</body>
+
+</html>

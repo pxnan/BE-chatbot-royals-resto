@@ -2,14 +2,14 @@ import pickle
 import pandas as pd
 import mysql.connector
 from preprocessing import preprocess
-from flask import Flask, request, jsonify
+from flask import Flask, request, jsonify, render_template
 from flask_cors import CORS
 import os
 import numpy as np
 
 # ===================== Inisialisasi Flask =====================
 app = Flask(__name__)
-CORS(app, origins="*")
+CORS(app)
 
 # ===================== Fungsi Koneksi Database MySQL =====================
 def get_db_connection():
@@ -46,8 +46,12 @@ def save_unknown_question(question):
         conn.close()
     except Exception as e:
         print(f"[DB ERROR] {e}")
+        
 
-# ===================== Endpoint Chat =====================
+@app.route('/')
+def index():
+    return render_template('index.html')
+
 @app.route('/chat', methods=['POST'])
 def chat():
     user_input = request.json.get('pertanyaan', '')
@@ -112,7 +116,6 @@ def chat():
         'status': 'ok'
     })
 
-# ===================== Endpoint Ambil Semua Pertanyaan Tidak Dikenal dengan Pagination =====================
 @app.route('/pertanyaan-unknown', methods=['GET'])
 def get_unknown_questions():
     try:
@@ -152,6 +155,5 @@ def get_unknown_questions():
         print(f"[DB ERROR] {e}")
         return jsonify({'error': 'Gagal mengambil data dari database'}), 500
 
-# ===================== Jalankan Server =====================
 if __name__ == '__main__':
     app.run(debug=True)
