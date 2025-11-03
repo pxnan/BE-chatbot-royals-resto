@@ -6,23 +6,38 @@ from flask import Flask, request, jsonify, render_template
 from flask_cors import CORS
 import os
 import numpy as np
+from dotenv import load_dotenv  # <- Import dotenv
+
+# ===================== Load .env =====================
+load_dotenv()  # otomatis baca file .env di root project
+
+DB_HOST = os.getenv("DB_HOST", "localhost")
+DB_USER = os.getenv("DB_USER", "root")
+DB_PASSWORD = os.getenv("DB_PASSWORD", "")
+DB_NAME = os.getenv("DB_NAME", "chatbot_royals_resto")
+
+FLASK_ENV = os.getenv("FLASK_ENV", "development")
+FLASK_DEBUG = os.getenv("FLASK_DEBUG", "True") == "True"
+FLASK_PORT = int(os.getenv("FLASK_PORT", 5000))
+
+ALLOWED_ORIGINS = os.getenv("ALLOWED_ORIGINS", "*")
 
 # ===================== Inisialisasi Flask =====================
 app = Flask(__name__)
-CORS(app)
+CORS(app, origins=ALLOWED_ORIGINS)
 
 # ===================== Fungsi Koneksi Database MySQL =====================
 def get_db_connection():
     """Buat koneksi baru ke database setiap request"""
     return mysql.connector.connect(
-        host="localhost",
-        user="root",
-        password="",
-        database="chatbot_royals_resto"
+        host=DB_HOST,
+        user=DB_USER,
+        password=DB_PASSWORD,
+        database=DB_NAME
     )
 
 # ===================== Load Model QA Tunggal =====================
-with open('model/model_qa.pkl', 'rb') as f:
+with open(os.path.join(os.getenv("MODEL_BASE_PATH", "model/"), 'model_qa.pkl'), 'rb') as f:
     qa_data = pickle.load(f)
 
 model_qa = qa_data['model']
@@ -31,7 +46,7 @@ answers = qa_data['answers']
 pertanyaan_list = qa_data['questions']
 
 # ===================== Load Dataset (opsional) =====================
-df = pd.read_csv('data/dataset.csv')
+df = pd.read_csv(os.getenv("DATA_PATH", "data/dataset.csv"))
 df['processed'] = df['pertanyaan'].apply(preprocess)
 
 # ===================== Fungsi Simpan Pertanyaan Tidak Dikenal =====================
@@ -156,4 +171,4 @@ def get_unknown_questions():
         return jsonify({'error': 'Gagal mengambil data dari database'}), 500
 
 if __name__ == '__main__':
-    app.run(debug=True)
+    app.run(debug=FLASK_DEBUG, port=FLASK_PORT)
