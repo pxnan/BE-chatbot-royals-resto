@@ -156,4 +156,4 @@ def get_unknown_questions():
         return jsonify({'error': 'Gagal mengambil data dari database'}), 500
 
 if __name__ == '__main__':
-    app.run(debug=FLASK_DEBUG, port=FLASK_PORT)
+    app.run()
