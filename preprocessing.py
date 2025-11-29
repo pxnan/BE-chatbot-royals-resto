@@ -1,6 +1,6 @@
 import re
 import string
-from nltk.corpus import stopwords
+# from nltk.corpus import stopwords
 from nltk.tokenize import word_tokenize
 from Sastrawi.Stemmer.StemmerFactory import StemmerFactory
 import nltk
@@ -9,7 +9,7 @@ import nltk
 nltk.download('punkt')
 nltk.download('stopwords')
 
-stop_words = set(stopwords.words('indonesian'))
+# stop_words = set(stopwords.words('indonesian'))
 
 # Inisialisasi stemmer Sastrawi
 factory = StemmerFactory()
@@ -26,9 +26,10 @@ def preprocess(text):
     tokens = word_tokenize(text)
     
     # Stopword removal
-    tokens = [word for word in tokens if word not in stop_words]
+    # tokens = [word for word in tokens if word not in stop_words]
     
     # Stemming menggunakan Sastrawi
     tokens = [stemmer.stem(word) for word in tokens]
+    
     
     return ' '.join(tokens)

@@ -101,8 +101,8 @@ def chat():
     top_scores = scores[top_indices]
 
     # ===== Deteksi Ambiguitas =====
-    ambiguity_threshold = 0.5
-    if len(top_scores) > 1 and abs(top_scores[0] - top_scores[1]) < ambiguity_threshold:
+    ambiguity_threshold = 0.1
+    if len(top_scores) > 1 and abs(top_scores[0] - top_scores[2]) < ambiguity_threshold:
         similar_questions = [pertanyaan_list[i] for i in top_indices]
         return jsonify({
             'pertanyaan': user_input,
