@@ -76,7 +76,7 @@ def chat():
     processed_input = preprocess(user_input)
     X_input_qa = vectorizer_qa.transform([processed_input])
 
-    # ==== CEK jika input tidak punya fitur TF-IDF sama sekali ====
+    # CEK jika input tidak punya fitur TF-IDF sama sekali
     if X_input_qa.nnz == 0:
         save_unknown_question(user_input)
         return jsonify({
@@ -95,12 +95,12 @@ def chat():
         print(f"Error calculating confidence: {e}")
         scores = np.array([0])
 
-    # Ambil top-N pertanyaan mirip (misal 3 teratas)
-    top_n = 5
+    # Ambil top-N pertanyaan mirip
+    top_n = 3
     top_indices = np.argsort(scores)[::-1][:top_n]
     top_scores = scores[top_indices]
 
-    # ===== Deteksi Ambiguitas =====
+    # Deteksi Ambiguitas
     ambiguity_threshold = 0.1
     if len(top_scores) > 1 and abs(top_scores[0] - top_scores[2]) < ambiguity_threshold:
         similar_questions = [pertanyaan_list[i] for i in top_indices]
@@ -111,7 +111,7 @@ def chat():
             'status': 'ambigu'
         })
 
-    # ===== Prediksi Jawaban Normal =====
+    # Prediksi Jawaban Normal
     max_score = top_scores[0]
     threshold = -1
     if max_score < threshold:
