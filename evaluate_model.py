@@ -1,6 +1,7 @@
 import pickle
 import pandas as pd
 from sklearn.metrics import confusion_matrix, classification_report, accuracy_score
+from sklearn.metrics import precision_recall_fscore_support
 import seaborn as sns
 import matplotlib.pyplot as plt
 from preprocessing import preprocess
@@ -253,7 +254,25 @@ plt.show()
 
 # ===== Classification Report =====
 print("\n=== Classification Report ===")
+report = classification_report(y_true_categories, y_pred_categories, output_dict=True)
 print(classification_report(y_true_categories, y_pred_categories))
+
+# ===== Weighted Metrics =====
+print("\n=== Weighted Metrics ===")
+weighted_precision = report['weighted avg']['precision'] * 100
+weighted_recall = report['weighted avg']['recall'] * 100
+weighted_f1 = report['weighted avg']['f1-score'] * 100
+
+print(f"Weighted Precision: {weighted_precision:.2f}%")
+print(f"Weighted Recall: {weighted_recall:.2f}%")
+print(f"Weighted F1-Score: {weighted_f1:.2f}%")
+
+# Atau menggunakan precision_recall_fscore_support langsung
+precision, recall, f1, support = precision_recall_fscore_support(y_true_categories, y_pred_categories, average='weighted')
+print(f"\nDari precision_recall_fscore_support:")
+print(f"Weighted Precision: {precision*100:.2f}%")
+print(f"Weighted Recall: {recall*100:.2f}%")
+print(f"Weighted F1-Score: {f1*100:.2f}%")
 
 # ===== Detail Accuracy per Category =====
 print("\n=== Accuracy per Category ===")
@@ -265,10 +284,9 @@ for category in unique_categories:
         category_accuracy[category] = cat_accuracy
         print(f"{category}: {cat_accuracy:.2f}%")
 
-# ===== Sample Predictions =====
-print("\n=== Sample Predictions ===")
-sample_indices = [0, 50, 100, 150, 200, 250, 300, 350]
-for idx in sample_indices:
-    print(f"Pertanyaan: {df_test.iloc[idx]['pertanyaan']}")
-    print(f"True: {y_true_categories[idx]}, Predicted: {y_pred_categories[idx]}")
-    print(f"Match: {y_true_categories[idx] == y_pred_categories[idx]}\n")
+# ===== Ringkasan Performa =====
+print("\n=== Performance Summary ===")
+print(f"Overall Accuracy: {accuracy:.2f}%")
+print(f"Weighted Precision: {weighted_precision:.2f}%")
+print(f"Weighted Recall: {weighted_recall:.2f}%")
+print(f"Weighted F1-Score: {weighted_f1:.2f}%")

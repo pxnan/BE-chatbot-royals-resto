@@ -7,7 +7,7 @@ import nltk
 
 # Download resource NLTK jika belum ada
 nltk.download('punkt')
-nltk.download('stopwords')
+# nltk.download('stopwords')
 
 # stop_words = set(stopwords.words('indonesian'))
 

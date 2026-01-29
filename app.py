@@ -76,7 +76,6 @@ def chat():
     processed_input = preprocess(user_input)
     X_input_qa = vectorizer_qa.transform([processed_input])
 
-    # CEK jika input tidak punya fitur TF-IDF sama sekali
     if X_input_qa.nnz == 0:
         save_unknown_question(user_input)
         return jsonify({
@@ -113,7 +112,7 @@ def chat():
 
     # Prediksi Jawaban Normal
     max_score = top_scores[0]
-    threshold = -1
+    threshold = -0.8
     if max_score < threshold:
         save_unknown_question(user_input)
         predicted_answer = "Mohon maaf, saya belum mengerti pertanyaan Anda."
