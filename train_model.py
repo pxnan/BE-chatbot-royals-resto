@@ -1,5 +1,6 @@
 import pandas as pd
 import pickle
+import time
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.svm import LinearSVC
 from preprocessing import preprocess
@@ -18,8 +19,13 @@ y_qa = list(range(len(df)))
 vectorizer_qa = TfidfVectorizer()
 X_qa_tfidf = vectorizer_qa.fit_transform(X_qa)
 
+start_time = time.time()
+
 model_qa = LinearSVC()
 model_qa.fit(X_qa_tfidf, y_qa)
+
+training_time = time.time() - start_time
+print(f"⏱️  Waktu training: {training_time:.2f} detik")
 
 # Simpan semua data QA dalam satu file, termasuk kategori
 qa_data = {

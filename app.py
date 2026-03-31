@@ -99,9 +99,45 @@ def chat():
     top_indices = np.argsort(scores)[::-1][:top_n]
     top_scores = scores[top_indices]
 
-    # Deteksi Ambiguitas
+    # Prediksi Jawaban Normal
+    max_score = top_scores[0]
+    threshold = -0.8
     ambiguity_threshold = 0.1
-    if len(top_scores) > 1 and abs(top_scores[0] - top_scores[2]) < ambiguity_threshold:
+    
+    if max_score < threshold:
+        save_unknown_question(user_input)
+        predicted_answer = "Mohon maaf, saya belum mengerti pertanyaan Anda."
+        return jsonify({
+            'pertanyaan': user_input,
+            'jawaban': predicted_answer,
+            'status': 'unknown'
+        })
+    
+    # Deteksi Ambiguitas dengan pengecekan exact match
+    elif len(top_scores) > 1 and abs(top_scores[0] - top_scores[1]) < ambiguity_threshold:
+        # Cek apakah input user sama persis dengan salah satu pertanyaan di dataset
+        exact_match = False
+        exact_match_idx = -1
+        
+        # Cari exact match (case insensitive, strip whitespace)
+        user_input_clean = user_input.lower().strip()
+        for idx, pertanyaan in enumerate(pertanyaan_list):
+            if user_input_clean == pertanyaan.lower().strip():
+                exact_match = True
+                exact_match_idx = idx
+                break
+        
+        if exact_match:
+            # Jika exact match, langsung berikan jawaban tanpa ambigu
+            predicted_answer = answers[exact_match_idx] if 0 <= exact_match_idx < len(answers) else "Jawaban tidak ditemukan"
+            print(f"Exact match found: {user_input} -> Index: {exact_match_idx}")
+            return jsonify({
+                'pertanyaan': user_input,
+                'jawaban': predicted_answer,
+                'status': 'ok'
+            })
+        
+        # Jika tidak exact match, tampilkan opsi ambigu
         similar_questions = [pertanyaan_list[i] for i in top_indices]
         return jsonify({
             'pertanyaan': user_input,
@@ -109,13 +145,8 @@ def chat():
             'jawaban': "Pertanyaan mana yang kamu maksud?",
             'status': 'ambigu'
         })
-
-    # Prediksi Jawaban Normal
-    max_score = top_scores[0]
-    threshold = -0.8
-    if max_score < threshold:
-        save_unknown_question(user_input)
-        predicted_answer = "Mohon maaf, saya belum mengerti pertanyaan Anda."
+    
+    # Kondisi normal (tidak ambigu, skor tinggi)
     else:
         predicted_index = model_qa.predict(X_input_qa)[0]
         if 0 <= predicted_index < len(answers):
@@ -123,12 +154,12 @@ def chat():
         else:
             save_unknown_question(user_input)
             predicted_answer = "Mohon maaf, saya belum mengerti pertanyaan Anda."
-
-    return jsonify({
-        'pertanyaan': user_input,
-        'jawaban': predicted_answer,
-        'status': 'ok'
-    })
+        
+        return jsonify({
+            'pertanyaan': user_input,
+            'jawaban': predicted_answer,
+            'status': 'ok'
+        })
 
 @app.route('/pertanyaan-unknown', methods=['GET'])
 def get_unknown_questions():

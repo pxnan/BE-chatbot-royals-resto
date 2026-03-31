@@ -114,7 +114,7 @@ df_test = pd.DataFrame({
         "apakah ada happy hour?", "ada diskon early bird?", "apakah ada promo pembukaan?", "ada celebration package?", "apakah ada birthday promo?", 
         "ada anniversary discount?", "apakah ada corporate discount?", "ada group discount?", "apakah ada bulk order promo?", "ada loyalty program?", 
         "apakah ada points reward?", "ada referral bonus?", "apakah ada seasonal promotion?", "ada festival promo?", "apakah ada holiday special?", 
-        "ada new year promo?", "apakah ada christmas discount?", "ada ramadhan promo?", "apakah ada lebaran discount?", "ada valentine promo?"
+        "ada new year promo?", "apakah ada christmas discount?", "ada promo pembayaran qris?", "apakah ada lebaran discount?", "ada valentine promo?"
     ],
     'kategori': [
         # Introduction (40)
@@ -254,8 +254,8 @@ plt.show()
 
 # ===== Classification Report =====
 print("\n=== Classification Report ===")
-report = classification_report(y_true_categories, y_pred_categories, output_dict=True)
-print(classification_report(y_true_categories, y_pred_categories))
+report = classification_report(y_true_categories, y_pred_categories, output_dict=True, digits=3)
+print(classification_report(y_true_categories, y_pred_categories, digits=3))
 
 # ===== Weighted Metrics =====
 print("\n=== Weighted Metrics ===")
