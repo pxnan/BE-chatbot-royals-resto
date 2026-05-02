@@ -8,7 +8,7 @@ from preprocessing import preprocess
 import numpy as np
 
 # ===== Load QA Model Tunggal =====
-with open('model/model_qa.pkl', 'rb') as f:
+with open('model/model_qa_rbf.pkl', 'rb') as f:
     qa_data = pickle.load(f)
 
 model_qa = qa_data['model']
@@ -248,7 +248,7 @@ sns.heatmap(cm, annot=True, fmt='d', cmap='Blues',
             yticklabels=unique_categories)
 plt.xlabel("Predicted Category")
 plt.ylabel("True Category")
-plt.title("Confusion Matrix Kategori (Model SVM Linear)")
+plt.title("Confusion Matrix Kategori (Model SVM RBF)")
 plt.tight_layout()
 plt.show()
 

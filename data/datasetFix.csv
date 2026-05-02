@@ -14,7 +14,6 @@ pertanyaan,jawaban,kategorinya
 "hello","Hello! Welcome to Royal's Resto. What can I help you with?","introduction"
 "apa kabar?","Hai, baik sekali! Senang bisa melayani Anda di Royal's Resto. Ada yang bisa dibantu?","introduction"
 "permisi","Permisi, saya di sini! Selamat datang di Royal's Resto Bot. Silakan, butuh bantuan apa?","introduction"
-
 "daftar menu","Kami menyediakan beberapa kategori menu yaitu: Makanan Pembuka, Sup, Kuah, Daging, Sapi, Ayam, Bebek, Burung Dara, Nasi, Telur, Bubur, Mie, Bihun, Kwetiauw, Ikan, Kepiting, Udang, Cumi, Minuman, Jus, Es, Makanan lainnya dan Minuman lainnya, silahkan bertanya menu apa saja yang ada di setiap kategorinya.","menu"
 "menu apa saja disini?","Kami menyediakan beberapa kategori menu yaitu: Makanan Pembuka, Sup, Kuah, Daging, Sapi, Ayam, Bebek, Burung Dara, Nasi, Telur, Bubur, Mie, Bihun, Kwetiauw, Ikan, Kepiting, Seafood, Minuman, Jus, Es dan menu lainnya, silahkan bertanya menu apa saja yang ada di setiap kategorinya.","menu"
 "menu apa saja yang tersedia?","Kami menyediakan beberapa kategori menu yaitu: Makanan Pembuka, Sup, Kuah, Daging, Sapi, Ayam, Bebek, Burung Dara, Nasi, Telur, Bubur, Mie, Bihun, Kwetiauw, Ikan, Kepiting, Seafood, Minuman, Jus, Es dan menu lainnya, silahkan bertanya menu apa saja yang ada di setiap kategorinya.","menu"
@@ -30,7 +29,6 @@ pertanyaan,jawaban,kategorinya
 "mau pesan, ada menu apa?","Kami menyediakan beberapa kategori menu yaitu: Makanan Pembuka, Sup, Kuah, Daging, Sapi, Ayam, Bebek, Burung Dara, Nasi, Telur, Bubur, Mie, Bihun, Kwetiauw, Ikan, Kepiting, Seafood, Minuman, Jus, Es dan menu lainnya, silahkan bertanya menu apa saja yang ada di setiap kategorinya.","menu"
 "bisa lihat daftar menu?","Kami menyediakan beberapa kategori menu yaitu: Makanan Pembuka, Sup, Kuah, Daging, Sapi, Ayam, Bebek, Burung Dara, Nasi, Telur, Bubur, Mie, Bihun, Kwetiauw, Ikan, Kepiting, Udang, Cumi, Minuman, Jus, Es, Makanan lainnya dan Minuman lainnya, silahkan bertanya menu apa saja yang ada di setiap kategorinya.","menu"
 "menu hari ini apa?","Kami menyediakan beberapa kategori menu yaitu: Makanan Pembuka, Sup, Kuah, Daging, Sapi, Ayam, Bebek, Burung Dara, Nasi, Telur, Bubur, Mie, Bihun, Kwetiauw, Ikan, Kepiting, Seafood, Minuman, Jus, Es dan menu lainnya, silahkan bertanya menu apa saja yang ada di setiap kategorinya.","menu"
-
 "makanan pembuka ada menu apa saja?","Makanan pembuka yang tersedia yaitu: Salad Udang, Salad Udang Goreng, Salad Fillet Ikan Krispi Keju, Salad Lobster, Salad Cumi Goreng, Salad Buah dan Salad Ayam.","menu_makanan_pembuka"
 "apa saja makanan pembuka?","Makanan pembuka yang tersedia yaitu: Salad Udang, Salad Udang Goreng, Salad Fillet Ikan Krispi Keju, Salad Lobster, Salad Cumi Goreng, Salad Buah dan Salad Ayam.","menu_makanan_pembuka"
 "menu makanan pembuka","Makanan pembuka yang tersedia yaitu: Salad Udang, Salad Udang Goreng, Salad Fillet Ikan Krispi Keju, Salad Lobster, Salad Cumi Goreng, Salad Buah dan Salad Ayam.","menu_makanan_pembuka"
@@ -62,7 +60,6 @@ pertanyaan,jawaban,kategorinya
 "daftar harga makanan pembuka","Berikut daftar harga makanan pembuka: Salad Udang Rp.227.000, Salad Udang Goreng Rp.185.000, Salad Fillet Ikan Krispi Keju Rp.180.000, Salad Lobster Rp.75.000/Ons, Salad Cumi Goreng Rp.125.000, Salad Buah Rp.85.000, Salad Ayam Rp.65.000","harga_makanan_pembuka"
 "harga semua makanan pembuka","Berikut daftar harga makanan pembuka: Salad Udang Rp.227.000, Salad Udang Goreng Rp.185.000, Salad Fillet Ikan Krispi Keju Rp.180.000, Salad Lobster Rp.75.000/Ons, Salad Cumi Goreng Rp.125.000, Salad Buah Rp.85.000, Salad Ayam Rp.65.000","harga_makanan_pembuka"
 "price list appetizer","Berikut daftar harga makanan pembuka: Salad Udang Rp.227.000, Salad Udang Goreng Rp.185.000, Salad Fillet Ikan Krispi Keju Rp.180.000, Salad Lobster Rp.75.000/Ons, Salad Cumi Goreng Rp.125.000, Salad Buah Rp.85.000, Salad Ayam Rp.65.000","harga_makanan_pembuka"
-
 "sup ada menu apa saja?","Menu Sup yang tersedia yaitu: Sup Asparagus Jagung Kepiting, Sup Asparagus Jagung Ayam, Sup Jagung Kepiting, Sup Jagung Ayam, Sup Asam Pedas / Sze Cuan, Sup Tahu Aneka Seafood, Sup Bibir Ikan, Sup Tahu dan Sapi Cincang, Sup Tom Yam.","menu_sup"
 "menu sup apa yang ada?","Menu Sup yang tersedia yaitu: Sup Asparagus Jagung Kepiting, Sup Asparagus Jagung Ayam, Sup Jagung Kepiting, Sup Jagung Ayam, Sup Asam Pedas / Sze Cuan, Sup Tahu Aneka Seafood, Sup Bibir Ikan, Sup Tahu dan Sapi Cincang, Sup Tom Yam.","menu_sup"
 "apa saja pilihan sup?","Menu Sup yang tersedia yaitu: Sup Asparagus Jagung Kepiting, Sup Asparagus Jagung Ayam, Sup Jagung Kepiting, Sup Jagung Ayam, Sup Asam Pedas / Sze Cuan, Sup Tahu Aneka Seafood, Sup Bibir Ikan, Sup Tahu dan Sapi Cincang, Sup Tom Yam.","menu_sup"
@@ -103,7 +100,6 @@ pertanyaan,jawaban,kategorinya
 "daftar harga semua sup","Berikut daftar harga sup: Sup Asparagus Jagung Kepiting Rp.85.000 (1/2: Rp.50.000), Sup Asparagus Jagung Ayam Rp.80.000 (1/2: Rp.45.000), Sup Jagung Kepiting Rp.80.000 (1/2: Rp.45.000), Sup Jagung Ayam Rp.75.000 (1/2: Rp.45.000), Sup Asam Pedas Rp.65.000, Sup Tahu Seafood Rp.80.000, Sup Bibir Ikan Rp.75.000, Sup Tahu Sapi Cincang Rp.70.000, Sup Tom Yam Rp.75.000","harga_sup"
 "harga semua menu sup","Berikut daftar harga sup: Sup Asparagus Jagung Kepiting Rp.85.000 (1/2: Rp.50.000), Sup Asparagus Jagung Ayam Rp.80.000 (1/2: Rp.45.000), Sup Jagung Kepiting Rp.80.000 (1/2: Rp.45.000), Sup Jagung Ayam Rp.75.000 (1/2: Rp.45.000), Sup Asam Pedas Rp.65.000, Sup Tahu Seafood Rp.80.000, Sup Bibir Ikan Rp.75.000, Sup Tahu Sapi Cincang Rp.70.000, Sup Tom Yam Rp.75.000","harga_sup"
 "price list soup","Berikut daftar harga sup: Sup Asparagus Jagung Kepiting Rp.85.000 (1/2: Rp.50.000), Sup Asparagus Jagung Ayam Rp.80.000 (1/2: Rp.45.000), Sup Jagung Kepiting Rp.80.000 (1/2: Rp.45.000), Sup Jagung Ayam Rp.75.000 (1/2: Rp.45.000), Sup Asam Pedas Rp.65.000, Sup Tahu Seafood Rp.80.000, Sup Bibir Ikan Rp.75.000, Sup Tahu Sapi Cincang Rp.70.000, Sup Tom Yam Rp.75.000","harga_sup"
-
 "kuah ada menu apa saja?","Menu Kuah yang tersedia yaitu: Pangsit Kuah, Capcay Kuah, Kuah Bakso Sapi, Kuah Bakso Ikan, Kuah Tahu Seafood, Sup Sehat, Sup Hipio, Sup Ayam Tempo Dulu, Sup Sapi Tempo Dulu, Sup Iga Sapi, Sup Buntut Sapi.","menu_kuah"
 "menu kuah apa yang ada?","Menu Kuah yang tersedia yaitu: Pangsit Kuah, Capcay Kuah, Kuah Bakso Sapi, Kuah Bakso Ikan, Kuah Tahu Seafood, Sup Sehat, Sup Hipio, Sup Ayam Tempo Dulu, Sup Sapi Tempo Dulu, Sup Iga Sapi, Sup Buntut Sapi.","menu_kuah"
 "apa saja pilihan kuah?","Menu Kuah yang tersedia yaitu: Pangsit Kuah, Capcay Kuah, Kuah Bakso Sapi, Kuah Bakso Ikan, Kuah Tahu Seafood, Sup Sehat, Sup Hipio, Sup Ayam Tempo Dulu, Sup Sapi Tempo Dulu, Sup Iga Sapi, Sup Buntut Sapi.","menu_kuah"
@@ -157,7 +153,6 @@ pertanyaan,jawaban,kategorinya
 "daftar harga menu kuah","Berikut daftar harga menu kuah: Pangsit Kuah Rp.52.000, Capcay Kuah Rp.65.000, Kuah Bakso Sapi Rp.67.000, Kuah Bakso Ikan Rp.65.000, Kuah Tahu Seafood Rp.70.000, Sup Sehat Rp.67.000, Sup Hipio Rp.80.000, Sup Ayam Tempo Dulu Rp.60.000, Sup Sapi Tempo Dulu Rp.70.000, Sup Iga Sapi Rp.75.000, Sup Buntut Sapi Rp.75.000","harga_kuah"
 "harga semua makanan berkuah","Berikut daftar harga menu kuah: Pangsit Kuah Rp.52.000, Capcay Kuah Rp.65.000, Kuah Bakso Sapi Rp.67.000, Kuah Bakso Ikan Rp.65.000, Kuah Tahu Seafood Rp.70.000, Sup Sehat Rp.67.000, Sup Hipio Rp.80.000, Sup Ayam Tempo Dulu Rp.60.000, Sup Sapi Tempo Dulu Rp.70.000, Sup Iga Sapi Rp.75.000, Sup Buntut Sapi Rp.75.000","harga_kuah"
 "price list kuah","Berikut daftar harga menu kuah: Pangsit Kuah Rp.52.000, Capcay Kuah Rp.65.000, Kuah Bakso Sapi Rp.67.000, Kuah Bakso Ikan Rp.65.000, Kuah Tahu Seafood Rp.70.000, Sup Sehat Rp.67.000, Sup Hipio Rp.80.000, Sup Ayam Tempo Dulu Rp.60.000, Sup Sapi Tempo Dulu Rp.70.000, Sup Iga Sapi Rp.75.000, Sup Buntut Sapi Rp.75.000","harga_kuah"
-
 "sapi ada menu apa saja?","Menu Sapi yang tersedia yaitu: Sapi Ala Peking, Sapi Ala Royal's, Sapi Asam Manis, Sapi Asin Pedas, Sapi Coca Cola, Sapi Keispi Royal's, Sapi Keispi Cabe Kering, Sapi Krispi Saus Inggris, Sapi Krispi Saus Smoke, Sapi Krispi Wijen, Sapi Hotplat, Sapi Lada Hitam.","menu_sapi"
 "menu sapi apa yang ada?","Menu Sapi yang tersedia yaitu: Sapi Ala Peking, Sapi Ala Royal's, Sapi Asam Manis, Sapi Asin Pedas, Sapi Coca Cola, Sapi Keispi Royal's, Sapi Keispi Cabe Kering, Sapi Krispi Saus Inggris, Sapi Krispi Saus Smoke, Sapi Krispi Wijen, Sapi Hotplat, Sapi Lada Hitam.","menu_sapi"
 "daging sapi ada apa saja?","Menu Sapi yang tersedia yaitu: Sapi Ala Peking, Sapi Ala Royal's, Sapi Asam Manis, Sapi Asin Pedas, Sapi Coca Cola, Sapi Keispi Royal's, Sapi Keispi Cabe Kering, Sapi Krispi Saus Inggris, Sapi Krispi Saus Smoke, Sapi Krispi Wijen, Sapi Hotplat, Sapi Lada Hitam.","menu_sapi"
@@ -218,7 +213,6 @@ pertanyaan,jawaban,kategorinya
 "semua harga sapi sama?","Ya, semua menu sapi harga sama Rp.70.000 per porsi","harga_sapi"
 "apakah harga sapi semua sama?","Ya, semua menu sapi harga sama Rp.70.000 per porsi","harga_sapi"
 "harga seragam untuk menu sapi?","Ya, semua menu sapi harga sama Rp.70.000 per porsi","harga_sapi"
-
 "daging ada menu apa saja?","Menu Daging yang tersedia yaitu: Iga Sapi Hotplat, Iga Sapi Goreng, Iga Asin Pedas, Iga Saus Madu, Iga Saus Taus, Iga Sapi Bawang Putih, Iga Saus Telur Asin, Sate Sapi, Dendeng Balado, Dendeng Cuka dan Dendeng Rusa","menu_daging"
 "menu daging apa yang ada?","Menu Daging yang tersedia yaitu: Iga Sapi Hotplat, Iga Sapi Goreng, Iga Asin Pedas, Iga Saus Madu, Iga Saus Taus, Iga Sapi Bawang Putih, Iga Saus Telur Asin, Sate Sapi, Dendeng Balado, Dendeng Cuka dan Dendeng Rusa","menu_daging"
 "olahan daging apa saja?","Menu Daging yang tersedia yaitu: Iga Sapi Hotplat, Iga Sapi Goreng, Iga Asin Pedas, Iga Saus Madu, Iga Saus Taus, Iga Sapi Bawang Putih, Iga Saus Telur Asin, Sate Sapi, Dendeng Balado, Dendeng Cuka dan Dendeng Rusa","menu_daging"
@@ -276,7 +270,6 @@ pertanyaan,jawaban,kategorinya
 "perbedaan harga menu daging","Menu daging memiliki beberapa range harga: Iga premium Rp.127.000, Iga reguler Rp.77.000, Sate Sapi Rp.68.000, Dendeng Rp.60.000-70.000","harga_daging"
 "harga termahal menu daging","Harga termahal menu daging: Iga Sapi Hotplat dan Goreng Rp.127.000","harga_daging"
 "harga termurah menu daging","Harga termurah menu daging: Dendeng Balado dan Dendeng Cuka Rp.60.000","harga_daging"
-
 "ayam ada menu apa saja?","Menu Ayam yang tersedia yaitu: AYAM GORENG MENTEGA, AYAM ORENG WANGI, AYAM GORENG TEPUNG SAUS MAYONAISE, AYAM WOKU, AYAM ASAM MANIS, AYAM SAUS INGGRIS, AYAM SAUS LEMON, AYAM CABE KERING, AYAM CAH KACANG MENTE, AYAM SAUS RICA, SATE AYAM,AYAM GORENG ALA ROYAL'S, AYAM GORENG SAMBAL TERASI, AYAM GORENG KALASAN, AYAM BAKAR RICA, AYAM PANIKI, AYAM SAMBAL IJO, AYAM SUWIR, AYAM KRIUK SAMBAL CUKA / BALADO, SAYAP AYAM.","menu_ayam"
 "menu ayam apa yang ada?","Menu Ayam yang tersedia yaitu: AYAM GORENG MENTEGA, AYAM ORENG WANGI, AYAM GORENG TEPUNG SAUS MAYONAISE, AYAM WOKU, AYAM ASAM MANIS, AYAM SAUS INGGRIS, AYAM SAUS LEMON, AYAM CABE KERING, AYAM CAH KACANG MENTE, AYAM SAUS RICA, SATE AYAM,AYAM GORENG ALA ROYAL'S, AYAM GORENG SAMBAL TERASI, AYAM GORENG KALASAN, AYAM BAKAR RICA, AYAM PANIKI, AYAM SAMBAL IJO, AYAM SUWIR, AYAM KRIUK SAMBAL CUKA / BALADO, SAYAP AYAM.","menu_ayam"
 "chicken menu apa saja?","Menu Ayam yang tersedia yaitu: AYAM GORENG MENTEGA, AYAM ORENG WANGI, AYAM GORENG TEPUNG SAUS MAYONAISE, AYAM WOKU, AYAM ASAM MANIS, AYAM SAUS INGGRIS, AYAM SAUS LEMON, AYAM CABE KERING, AYAM CAH KACANG MENTE, AYAM SAUS RICA, SATE AYAM,AYAM GORENG ALA ROYAL'S, AYAM GORENG SAMBAL TERASI, AYAM GORENG KALASAN, AYAM BAKAR RICA, AYAM PANIKI, AYAM SAMBAL IJO, AYAM SUWIR, AYAM KRIUK SAMBAL CUKA / BALADO, SAYAP AYAM.","menu_ayam"
@@ -369,7 +362,6 @@ pertanyaan,jawaban,kategorinya
 "ayam termurah apa?","Menu ayam termurah: SAYAP AYAM Rp.37.000","harga_ayam"
 "berapa harga ayam royal's?","Harga AYAM GORENG ALA ROYAL'S: Rp.120.000 (menu ayam termahal)","harga_ayam"
 "harga chicken wings berapa?","Harga SAYAP AYAM: Rp.37.000 (menu ayam termurah)","harga_ayam"
-
 "bebek ada menu apa saja?","Menu Bebek yang tersedia yaitu: BEBEK GORENG ALA ROYAL'S, BEBEK GORENG SAMBAL TERASI, BEBEK SAMBAL IJO, BEBEK WOKU.","menu_bebek"
 "menu bebek apa yang ada?","Menu Bebek yang tersedia yaitu: BEBEK GORENG ALA ROYAL'S, BEBEK GORENG SAMBAL TERASI, BEBEK SAMBAL IJO, BEBEK WOKU.","menu_bebek"
 "duck menu apa saja?","Menu Bebek yang tersedia yaitu: BEBEK GORENG ALA ROYAL'S, BEBEK GORENG SAMBAL TERASI, BEBEK SAMBAL IJO, BEBEK WOKU.","menu_bebek"
@@ -410,7 +402,6 @@ pertanyaan,jawaban,kategorinya
 "recommend menu bebek","Kami punya 4 menu bebek: BEBEK GORENG ALA ROYAL'S (premium), BEBEK WOKU (spesial), BEBEK GORENG SAMBAL TERASI dan BEBEK SAMBAL IJO (regular)","menu_bebek"
 "bebek apa yang enak?","Semua menu bebek kami enak! BEBEK GORENG ALA ROYAL'S untuk yang premium, BEBEK WOKU untuk yang suka pedas, atau BEBEK SAMBAL IJO untuk yang tradisional","menu_bebek"
 "pilihan bebek apa saja?","Menu Bebek yang tersedia yaitu: BEBEK GORENG ALA ROYAL'S, BEBEK GORENG SAMBAL TERASI, BEBEK SAMBAL IJO, BEBEK WOKU.","menu_bebek"
-
 "burung dara ada menu apa saja?","Menu Burung dara yang tersedia yaitu: BURUNG DARA GORENG MENTEGA, BURUNG DARA GORENG KERING","menu_burung_dara"
 "menu burung dara apa yang ada?","Menu Burung dara yang tersedia yaitu: BURUNG DARA GORENG MENTEGA, BURUNG DARA GORENG KERING","menu_burung_dara"
 "pigeon menu apa saja?","Menu Burung dara yang tersedia yaitu: BURUNG DARA GORENG MENTEGA, BURUNG DARA GORENG KERING","menu_burung_dara"
@@ -449,7 +440,6 @@ pertanyaan,jawaban,kategorinya
 "apa perbedaan burung dara mentega dan kering?","BURUNG DARA GORENG MENTEGA pakai saus mentega, BURUNG DARA GORENG KERING tanpa saus (kering crispy)","menu_burung_dara"
 "burung dara untuk berapa orang?","Burung dara biasanya untuk 1 orang per ekor, harga Rp.65.000 per ekor","menu_burung_dara"
 "berapa porsi burung dara?","Satu porsi burung dara = 1 ekor, harga Rp.65.000","harga_burung_dara"
-
 "nasi ada menu apa saja?","Menu Nasi yang tersedia yaitu: NASI GORENG SPESIAL ALA ROYAL'S, NASI GORENG PERANCIS, NASI GORENG HONG KONG, NASI GORENG SEAFOOD, NASI GORENG AYAM, NASI GORENG IKAN ASIN, NASI GORENG JAWA (MERAH), NASI GORENG SAPI, NASI GORENG TELUR, NASI GORENG KEPITING, NASI CAP CAY, NASI CAP CAY SAPI.","menu_nasi"
 "menu nasi apa yang ada?","Menu Nasi yang tersedia yaitu: NASI GORENG SPESIAL ALA ROYAL'S, NASI GORENG PERANCIS, NASI GORENG HONG KONG, NASI GORENG SEAFOOD, NASI GORENG AYAM, NASI GORENG IKAN ASIN, NASI GORENG JAWA (MERAH), NASI GORENG SAPI, NASI GORENG TELUR, NASI GORENG KEPITING, NASI CAP CAY, NASI CAP CAY SAPI.","menu_nasi"
 "fried rice menu apa saja?","Menu Nasi yang tersedia yaitu: NASI GORENG SPESIAL ALA ROYAL'S, NASI GORENG PERANCIS, NASI GORENG HONG KONG, NASI GORENG SEAFOOD, NASI GORENG AYAM, NASI GORENG IKAN ASIN, NASI GORENG JAWA (MERAH), NASI GORENG SAPI, NASI GORENG TELUR, NASI GORENG KEPITING, NASI CAP CAY, NASI CAP CAY SAPI.","menu_nasi"
@@ -517,7 +507,6 @@ pertanyaan,jawaban,kategorinya
 "nasi goreng special apa?","NASI GORENG SPESIAL ALA ROYAL'S dan NASI GORENG KEPITING adalah varian special","menu_nasi"
 "nasi goreng dengan harga 35rb","Nasi goreng Rp.35.000: AYAM, IKAN ASIN, JAWA, TELUR, ROYAL'S","harga_nasi"
 "nasi goreng kepiting kenapa mahal?","NASI GORENG KEPITING Rp.63.000 karena menggunakan bahan premium kepiting","harga_nasi"
-
 "telur ada menu apa saja?","Menu Telur yang tersedia yaitu: TELUR MATA SAPI, TELUR DADAR, TELUR DADAR CAY PO, TELUR REBUS.","menu_telur"
 "menu telur apa yang ada?","Menu Telur yang tersedia yaitu: TELUR MATA SAPI, TELUR DADAR, TELUR DADAR CAY PO, TELUR REBUS.","menu_telur"
 "egg menu apa saja?","Menu Telur yang tersedia yaitu: TELUR MATA SAPI, TELUR DADAR, TELUR DADAR CAY PO, TELUR REBUS.","menu_telur"
@@ -566,7 +555,6 @@ pertanyaan,jawaban,kategorinya
 "telur untuk sarapan apa?","Untuk sarapan: TELUR MATA SAPI Rp.10.000 atau TELUR DADAR Rp.15.000","menu_telur"
 "menu telur sederhana","Menu telur sederhana: TELUR MATA SAPI atau TELUR REBUS Rp.10.000","menu_telur"
 "telur special apa?","Telur special: TELUR DADAR CAY PO Rp.32.000","menu_telur"
-
 "bubur ada menu apa saja?","Menu Bubur yang tersedia yaitu: BUBUR POLOS, BUBUR AYAM, BUBUR SAPI, BUBUR IKAN, BUBUR MIX.","menu_bubur"
 "menu bubur apa yang ada?","Menu Bubur yang tersedia yaitu: BUBUR POLOS, BUBUR AYAM, BUBUR SAPI, BUBUR IKAN, BUBUR MIX.","menu_bubur"
 "porridge menu apa saja?","Menu Bubur yang tersedia yaitu: BUBUR POLOS, BUBUR AYAM, BUBUR SAPI, BUBUR IKAN, BUBUR MIX.","menu_bubur"
@@ -621,7 +609,6 @@ pertanyaan,jawaban,kategorinya
 "urutkan harga bubur dari termurah","Urutan harga bubur: POLOS Rp.23.000, AYAM Rp.28.000, IKAN Rp.35.000, SAPI Rp.40.000, MIX Rp.50.000","harga_bubur"
 "bubur sapi kenapa lebih mahal?","BUBUR SAPI Rp.40.000 lebih mahal karena menggunakan daging sapi sebagai bahan premium","harga_bubur"
 "bubur ayam worth it?","BUBUR AYAM Rp.28.000 sangat worth it dengan rasa yang lezat dan harga terjangkau","menu_bubur"
-
 "mie ada menu apa saja?","Menu Mie yang tersedia yaitu: MIE GORENG ALA ROYAL'S, MIE GORENG AYAM, MIE GORENG SEAFOOD, MIE GORENG CAKALANG FUFU, MIE GORENG ULANG TAHUN, MIE GORENG SAPI, MIE GORENG TELUR, MIE KUAH SEAFOOD, MIE KUAH AYAM, MISOA KUAH, MIE KUAH CAKALANG FUFU, MIE PANGSIT AYAM, TAMI CAP CAY, I FU MIE AYAM, I FU MIE SEAFOOD, MIE UDON GORENG, MIE UDON KUAH, MIE UDON KARI.","menu_mie"
 "menu mie apa yang ada?","Menu Mie yang tersedia yaitu: MIE GORENG ALA ROYAL'S, MIE GORENG AYAM, MIE GORENG SEAFOOD, MIE GORENG CAKALANG FUFU, MIE GORENG ULANG TAHUN, MIE GORENG SAPI, MIE GORENG TELUR, MIE KUAH SEAFOOD, MIE KUAH AYAM, MISOA KUAH, MIE KUAH CAKALANG FUFU, MIE PANGSIT AYAM, TAMI CAP CAY, I FU MIE AYAM, I FU MIE SEAFOOD, MIE UDON GORENG, MIE UDON KUAH, MIE UDON KARI.","menu_mie"
 "noodle menu apa saja?","Menu Mie yang tersedia yaitu: MIE GORENG ALA ROYAL'S, MIE GORENG AYAM, MIE GORENG SEAFOOD, MIE GORENG CAKALANG FUFU, MIE GORENG ULANG TAHUN, MIE GORENG SAPI, MIE GORENG TELUR, MIE KUAH SEAFOOD, MIE KUAH AYAM, MISOA KUAH, MIE KUAH CAKALANG FUFU, MIE PANGSIT AYAM, TAMI CAP CAY, I FU MIE AYAM, I FU MIE SEAFOOD, MIE UDON GORENG, MIE UDON KUAH, MIE UDON KARI.","menu_mie"
@@ -713,7 +700,6 @@ pertanyaan,jawaban,kategorinya
 "mie seafood yang murah","Mie seafood termurah: MIE GORENG SEAFOOD Rp.40.000","harga_mie"
 "perbedaan i fu mie dan mie biasa","I Fu Mie adalah mie telur pipih dari Hong Kong, tekstur lebih kenyal","menu_mie"
 "misoa kenapa mahal?","MISOA KUAH Rp.73.000 karena menggunakan misoa (mie beras halus) premium dengan kuah special","harga_mie"
-
 "bihun ada menu apa saja?","Menu Bihun yang tersedia yaitu: BIHUN SPESIAL ALA ROYAL'S, BIHUN GORENG AYAM, BIHUN GORENG SEAFOOD, BIHUN GORENG KEPITING, BIHUN KUAH SAPI, BIHUN KUAH AYAM, BIHUN KUAH SEAFOOD.","menu_bihun"
 "menu bihun apa yang ada?","Menu Bihun yang tersedia yaitu: BIHUN SPESIAL ALA ROYAL'S, BIHUN GORENG AYAM, BIHUN GORENG SEAFOOD, BIHUN GORENG KEPITING, BIHUN KUAH SAPI, BIHUN KUAH AYAM, BIHUN KUAH SEAFOOD.","menu_bihun"
 "rice vermicelli menu apa saja?","Menu Bihun yang tersedia yaitu: BIHUN SPESIAL ALA ROYAL'S, BIHUN GORENG AYAM, BIHUN GORENG SEAFOOD, BIHUN GORENG KEPITING, BIHUN KUAH SAPI, BIHUN KUAH AYAM, BIHUN KUAH SEAFOOD.","menu_bihun"
@@ -773,7 +759,6 @@ pertanyaan,jawaban,kategorinya
 "urutkan harga bihun dari termurah","Urutan harga bihun: Ayam Rp.33.000, Seafood/Kepiting Rp.40.000, Sapi Rp.42.000, Royal's Rp.45.000","harga_bihun"
 "bihun yang ada kepiting","BIHUN GORENG KEPITING Rp.40.000","menu_bihun"
 "beda bihun special dan biasa","Bihun special: ROYAL'S Rp.45.000 dengan topping premium, bihun biasa mulai Rp.33.000","menu_bihun"
-
 "kwetiauw ada menu apa saja?","Menu Kwetiauw yang tersedia yaitu: KWETIAUW GORENG AYAM, KWETIAUW GORENG SEAFOOD, KWETIAUW SIRAM SAPI, KWETIAUW SIRAM SAPI TAUSI.","menu_kwetiauw"
 "menu kwetiauw apa yang ada?","Menu Kwetiauw yang tersedia yaitu: KWETIAUW GORENG AYAM, KWETIAUW GORENG SEAFOOD, KWETIAUW SIRAM SAPI, KWETIAUW SIRAM SAPI TAUSI.","menu_kwetiauw"
 "flat rice noodles menu apa saja?","Menu Kwetiauw yang tersedia yaitu: KWETIAUW GORENG AYAM, KWETIAUW GORENG SEAFOOD, KWETIAUW SIRAM SAPI, KWETIAUW SIRAM SAPI TAUSI.","menu_kwetiauw"
@@ -825,7 +810,6 @@ pertanyaan,jawaban,kategorinya
 "harga kwetiau special","Kwetiau special: KWETIAUW SIRAM SAPI TAUSI Rp.53.000","harga_kwetiauw"
 "kwetiau dengan harga 50rb","Kwetiau harga sekitar Rp.50.000: KWETIAUW SIRAM SAPI Rp.48.000 atau KWETIAUW SIRAM SAPI TAUSI Rp.53.000","harga_kwetiauw"
 "perbedaan siram dan goreng kwetiau","Kwetiau goreng: kering, Kwetiau siram: berkuah/saus","menu_kwetiauw"
-
 "ikan ada menu apa saja?","Menu Ikan yang tersedia yaitu: KAKAP, GURAMI, MUJAIR, MAS, BOBARA, KERAPU, DAGING IKAN GORENG FILLET, DAGING IKAN SAUS, DAGING IKAN MASAK WOKU, RAHANG TUNA, TELUR IKAN dan KEPALA IKAN.","menu_ikan"
 "menu ikan apa yang ada?","Menu Ikan yang tersedia yaitu: KAKAP, GURAMI, MUJAIR, MAS, BOBARA, KERAPU, DAGING IKAN GORENG FILLET, DAGING IKAN SAUS, DAGING IKAN MASAK WOKU, RAHANG TUNA, TELUR IKAN dan KEPALA IKAN.","menu_ikan"
 "fish menu apa saja?","Menu Ikan yang tersedia yaitu: KAKAP, GURAMI, MUJAIR, MAS, BOBARA, KERAPU, DAGING IKAN GORENG FILLET, DAGING IKAN SAUS, DAGING IKAN MASAK WOKU, RAHANG TUNA, TELUR IKAN dan KEPALA IKAN.","menu_ikan"
@@ -906,7 +890,6 @@ pertanyaan,jawaban,kategorinya
 "kepala ikan harga berapa?","KEPALA IKAN: Rp.55.000/Ons","harga_ikan"
 "per ons itu bagaimana?","Harga per ons berarti harga tergantung berat ikan yang dipilih, semakin besar ikan semakin mahal","harga_ikan"
 "ikan yang tidak per ons","Menu ikan tidak per ons: DAGING IKAN GORENG FILLET, DAGING IKAN SAUS, DAGING IKAN MASAK WOKU, TELUR IKAN","harga_ikan"
-
 "kepiting ada menu apa saja?","Menu Kepiting yang tersedia yaitu: KEPITING SOKA SAUS TELUR ASIN, KEPITING SOKA GORENG TEPUNG, KEPITING SOKA GORENG MAYONISE, KEPITING SOKA CABE GARAM, KEPITING KENARI, KEPITING BELANGA DAN LOBSTER","menu_kepiting"
 "menu kepiting apa yang ada?","Menu Kepiting yang tersedia yaitu: KEPITING SOKA SAUS TELUR ASIN, KEPITING SOKA GORENG TEPUNG, KEPITING SOKA GORENG MAYONISE, KEPITING SOKA CABE GARAM, KEPITING KENARI, KEPITING BELANGA DAN LOBSTER","menu_kepiting"
 "crab menu apa saja?","Menu Kepiting yang tersedia yaitu: KEPITING SOKA SAUS TELUR ASIN, KEPITING SOKA GORENG TEPUNG, KEPITING SOKA GORENG MAYONISE, KEPITING SOKA CABE GARAM, KEPITING KENARI, KEPITING BELANGA DAN LOBSTER","menu_kepiting"
@@ -968,7 +951,6 @@ pertanyaan,jawaban,kategorinya
 "urutkan harga kepiting dari termurah","Urutan harga: Kepiting Kenari/Belanga Rp.60.000/ons, Kepiting Soka Rp.70.000/porsi, Lobster Rp.75.000/ons","harga_kepiting"
 "kepiting dengan saus telur asin","KEPITING SOKA SAUS TELUR ASIN Rp.70.000/Porsi","menu_kepiting"
 "perbedaan harga per porsi dan per ons","Per porsi: harga tetap, Per ons: harga tergantung berat yang dipilih","harga_kepiting"
-
 "udang ada menu apa saja?","Menu Udang yang tersedia yaitu: UDANG RONGGENG GORENG KERING, UDANG RONGGENG CABE GARAM, UDANG SPESIAL ALA ROYAL'S, UDANG TIM BAWANG PUTIH, UDANG TIM ALA THAILAND, UDANG ASAM MANIS, UDANG SAUS TELUR ASIN, UDANG GORENG TEPUNG, UDANG GORENG MAYONAISE, UDANG GORENG GANDUM, UDANG GORENG MENTEGA dan LUMPIA UDANG.","menu_udang"
 "menu udang apa yang ada?","Menu Udang yang tersedia yaitu: UDANG RONGGENG GORENG KERING, UDANG RONGGENG CABE GARAM, UDANG SPESIAL ALA ROYAL'S, UDANG TIM BAWANG PUTIH, UDANG TIM ALA THAILAND, UDANG ASAM MANIS, UDANG SAUS TELUR ASIN, UDANG GORENG TEPUNG, UDANG GORENG MAYONAISE, UDANG GORENG GANDUM, UDANG GORENG MENTEGA dan LUMPIA UDANG.","menu_udang"
 "shrimp menu apa saja?","Menu Udang yang tersedia yaitu: UDANG RONGGENG GORENG KERING, UDANG RONGGENG CABE GARAM, UDANG SPESIAL ALA ROYAL'S, UDANG TIM BAWANG PUTIH, UDANG TIM ALA THAILAND, UDANG ASAM MANIS, UDANG SAUS TELUR ASIN, UDANG GORENG TEPUNG, UDANG GORENG MAYONAISE, UDANG GORENG GANDUM, UDANG GORENG MENTEGA dan LUMPIA UDANG.","menu_udang"
@@ -1053,7 +1035,6 @@ pertanyaan,jawaban,kategorinya
 "urutkan harga udang dari termurah","Urutan harga: Udang Ronggeng Rp.57.000/ons, Goreng Tepung Rp.63.000, Medium Rp.65.000 (6 varian), Premium Rp.70.000 (3 varian)","harga_udang"
 "udang dengan harga 70rb","Udang harga Rp.70.000: UDANG TIM BAWANG PUTIH, UDANG TIM ALA THAILAND, UDANG SAUS TELUR ASIN","harga_udang"
 "perbedaan harga per ons dan per porsi","Per ons: harga tergantung berat, Per porsi: harga tetap sudah termasuk nasi","harga_udang"
-
 "cumi ada menu apa saja?","Menu Cumi yang tersedia yaitu: CUMI ALA ROYAL'S, CUMI SAUS INGGRIS, CUMI SAUS THAILAND, CUMI GORENG MENTEGA, CUMI SAUS TELUR ASIN, CUMI GORENG MAYONAISE, CUMI GORENG TEPUNG, CUMI WOKU, CUMI CABE GARAM, CUMI BAKAR MENTEGA, CUMI BAKAR KECAP, CUMI BAKAR RICA, CUMI ASAM MANIS, CUMI GORENG RICA dan CUMI SAUS PADANG.","menu_cumi"
 "menu cumi apa yang ada?","Menu Cumi yang tersedia yaitu: CUMI ALA ROYAL'S, CUMI SAUS INGGRIS, CUMI SAUS THAILAND, CUMI GORENG MENTEGA, CUMI SAUS TELUR ASIN, CUMI GORENG MAYONAISE, CUMI GORENG TEPUNG, CUMI WOKU, CUMI CABE GARAM, CUMI BAKAR MENTEGA, CUMI BAKAR KECAP, CUMI BAKAR RICA, CUMI ASAM MANIS, CUMI GORENG RICA dan CUMI SAUS PADANG.","menu_cumi"
 "squid menu apa saja?","Menu Cumi yang tersedia yaitu: CUMI ALA ROYAL'S, CUMI SAUS INGGRIS, CUMI SAUS THAILAND, CUMI GORENG MENTEGA, CUMI SAUS TELUR ASIN, CUMI GORENG MAYONAISE, CUMI GORENG TEPUNG, CUMI WOKU, CUMI CABE GARAM, CUMI BAKAR MENTEGA, CUMI BAKAR KECAP, CUMI BAKAR RICA, CUMI ASAM MANIS, CUMI GORENG RICA dan CUMI SAUS PADANG.","menu_cumi"
@@ -1153,7 +1134,6 @@ pertanyaan,jawaban,kategorinya
 "urutkan harga cumi dari termurah","Urutan harga: Basic Rp.50.000 (4 varian), Royal's Rp.55.000, Premium Rp.58.000 (10 varian)","harga_cumi"
 "cumi dengan saus thailand","CUMI SAUS THAILAND Rp.58.000 dengan rasa asam pedas khas Thailand","menu_cumi"
 "semua harga cumi bakar","Cumi bakar semua varian harga sama Rp.58.000","harga_cumi"
-
 "makanan lainnya ada menu apa aja?","Menu Makanan lainnya yang tersedia yaitu: GOHU PEPAYA, JAGUNG KEJU, PISANG GORENG KIPAS, PISANG GORENG MULUT BEBEK, PISANG RAJA GORENG KEJU, KENTANG GORENG, LUMPIA MINI, PANGSIT GORENG dan ROTI BAKAR","menu_makanan_lainnya"
 "menu makanan lainnya apa yang ada?","Menu Makanan lainnya yang tersedia yaitu: GOHU PEPAYA, JAGUNG KEJU, PISANG GORENG KIPAS, PISANG GORENG MULUT BEBEK, PISANG RAJA GORENG KEJU, KENTANG GORENG, LUMPIA MINI, PANGSIT GORENG dan ROTI BAKAR","menu_makanan_lainnya"
 "other food menu apa saja?","Menu Makanan lainnya yang tersedia yaitu: GOHU PEPAYA, JAGUNG KEJU, PISANG GORENG KIPAS, PISANG GORENG MULUT BEBEK, PISANG RAJA GORENG KEJU, KENTANG GORENG, LUMPIA MINI, PANGSIT GORENG dan ROTI BAKAR","menu_makanan_lainnya"
@@ -1224,7 +1204,6 @@ pertanyaan,jawaban,kategorinya
 "gohu pepaya rasanya bagaimana?","GOHU PEPAYA memiliki rasa segar, asam, manis, dan pedas, harga Rp.16.000","menu_makanan_lainnya"
 "snack untuk anak-anak","Snack anak: PISANG GORENG KIPAS Rp.26.000 atau KENTANG GORENG Rp.29.000","menu_makanan_lainnya"
 "makanan pendamping yang enak","Makanan pendamping enak: JAGUNG KEJU Rp.31.000 atau LUMPIA MINI Rp.34.000","menu_makanan_lainnya"
-
 "minuman ada menu apa aja?","Menu Minuman yang tersedia yaitu: MOCTAIL, SODA, FRAPPE dan TEA","menu_minuman"
 "menu minuman apa yang ada?","Menu Minuman yang tersedia yaitu: MOCTAIL, SODA, FRAPPE dan TEA","menu_minuman"
 "drinks menu apa saja?","Menu Minuman yang tersedia yaitu: MOCTAIL, SODA, FRAPPE dan TEA","menu_minuman"
@@ -1282,7 +1261,6 @@ pertanyaan,jawaban,kategorinya
 "minuman ukuran berapa?","Semua minuman ukuran standar, harga Rp.37.000","harga_minuman"
 "bisa minta es kurang?","Bisa request es kurang untuk semua minuman, harga tetap Rp.37.000","menu_minuman"
 "minuman pakai gula?","Semua minuman menggunakan gula, bisa request kurang manis, harga Rp.37.000","menu_minuman"
-
 "jus ada menu apa aja?","Menu Jus yang tersedia yaitu: JUS APPLE, JUS GUAVA, JUS DRAGON FRUIT, JUS SOURSOP, JUS WATERMELON, JUS MELON, JUS PAPAYA, JUS DURIAN, JUS AVOCADO, JUS CUCUMBER, JUS TOMATO, JUS CARROT, JUS PINEAPPLE, JUS MANGGO, JUS KOPYOR, JUS STRAWBERRY, JUS BRENEBON, JUS ORANGE, JUS MIX (SAWI NANAS) dan JUS GANDARIA","menu_jus"
 "menu jus apa yang ada?","Menu Jus yang tersedia yaitu: JUS APPLE, JUS GUAVA, JUS DRAGON FRUIT, JUS SOURSOP, JUS WATERMELON, JUS MELON, JUS PAPAYA, JUS DURIAN, JUS AVOCADO, JUS CUCUMBER, JUS TOMATO, JUS CARROT, JUS PINEAPPLE, JUS MANGGO, JUS KOPYOR, JUS STRAWBERRY, JUS BRENEBON, JUS ORANGE, JUS MIX (SAWI NANAS) dan JUS GANDARIA","menu_jus"
 "juice menu apa saja?","Menu Jus yang tersedia yaitu: JUS APPLE, JUS GUAVA, JUS DRAGON FRUIT, JUS SOURSOP, JUS WATERMELON, JUS MELON, JUS PAPAYA, JUS DURIAN, JUS AVOCADO, JUS CUCUMBER, JUS TOMATO, JUS CARROT, JUS PINEAPPLE, JUS MANGGO, JUS KOPYOR, JUS STRAWBERRY, JUS BRENEBON, JUS ORANGE, JUS MIX (SAWI NANAS) dan JUS GANDARIA","menu_jus"
@@ -1409,7 +1387,6 @@ pertanyaan,jawaban,kategorinya
 "jus untuk diet","Jus untuk diet: JUS TIMUN Rp.27.000 atau JUS TOMAT Rp.27.000","menu_jus"
 "jus buah lokal","Jus buah lokal: JUS MANGGA Rp.38.000, JUS PEPAYA Rp.27.000, JUS JERUK Rp.32.000, JUS GANDARIA Rp.34.000","menu_jus"
 "jus buah import","Jus buah import: JUS APPLE Rp.32.000, JUS DRAGON FRUIT Rp.35.000, JUS STRAWBERRY Rp.32.000","menu_jus"
-
 "es ada menu apa aja?","Menu Es yang tersedia yaitu: ES KACANG BRENEBON, ES TIGA RASA, ES KACANG TANAH, ES BUAH CAMPUR, ES ALPUKAT GARO, ES SODA GEMBIRA, ES FRUIT PUNCH, ES SELASIH RAMBUTANN + NATA DE COCO, ES COCA COLA SUSU, ES CAPUCHINO, ES KOPYOR, ES CENDOL, ES TELLER, ES GANDARIA, ES COKLAT DURIAN, ES TEH MANIS, ES TEH TAWAR dan ES LEMON TEH","menu_es"
 "menu es apa yang ada?","Menu Es yang tersedia yaitu: ES KACANG BRENEBON, ES TIGA RASA, ES KACANG TANAH, ES BUAH CAMPUR, ES ALPUKAT GARO, ES SODA GEMBIRA, ES FRUIT PUNCH, ES SELASIH RAMBUTANN + NATA DE COCO, ES COCA COLA SUSU, ES CAPUCHINO, ES KOPYOR, ES CENDOL, ES TELLER, ES GANDARIA, ES COKLAT DURIAN, ES TEH MANIS, ES TEH TAWAR dan ES LEMON TEH","menu_es"
 "ice beverages menu apa saja?","Menu Es yang tersedia yaitu: ES KACANG BRENEBON, ES TIGA RASA, ES KACANG TANAH, ES BUAH CAMPUR, ES ALPUKAT GARO, ES SODA GEMBIRA, ES FRUIT PUNCH, ES SELASIH RAMBUTANN + NATA DE COCO, ES COCA COLA SUSU, ES CAPUCHINO, ES KOPYOR, ES CENDOL, ES TELLER, ES GANDARIA, ES COKLAT DURIAN, ES TEH MANIS, ES TEH TAWAR dan ES LEMON TEH","menu_es"
@@ -1527,7 +1504,6 @@ pertanyaan,jawaban,kategorinya
 "es buah yang komplit","ES BUAH CAMPUR Rp.35.000 dengan berbagai macam buah","menu_es"
 "urutkan harga es dari termurah","Urutan harga: ES TEH TAWAR Rp.17.000, ES TEH MANIS Rp.20.000, Simple Rp.27.000-29.000 (6 varian), Medium Rp.32.000-35.000 (8 varian), Premium Rp.37.000 (2 varian)","harga_es"
 "es yang unik dan khas","Es unik: ES KACANG BRENEBON Rp.32.000 (khas Manado) atau ES GANDARIA Rp.34.000 (buah lokal)","menu_es"
-
 "minuman lainnya ada menu apa aja?","Menu Minuman lainnya yang tersedia yaitu: CHINESE TEA, AIR GURAKA, MILO, KOPI HITAM, KOPI SUSU, KELAPA MUDA BATOK, KELAPA MUDA + LENGKENG, BUAH SEGAR dan MINERAL BOTTLE.","menu_minuman_lainnya"
 "menu minuman lainnya apa yang ada?","Menu Minuman lainnya yang tersedia yaitu: CHINESE TEA, AIR GURAKA, MILO, KOPI HITAM, KOPI SUSU, KELAPA MUDA BATOK, KELAPA MUDA + LENGKENG, BUAH SEGAR dan MINERAL BOTTLE.","menu_minuman_lainnya"
 "other beverages menu apa saja?","Menu Minuman lainnya yang tersedia yaitu: CHINESE TEA, AIR GURAKA, MILO, KOPI HITAM, KOPI SUSU, KELAPA MUDA BATOK, KELAPA MUDA + LENGKENG, BUAH SEGAR dan MINERAL BOTTLE.","menu_minuman_lainnya"
@@ -1603,7 +1579,6 @@ pertanyaan,jawaban,kategorinya
 "urutkan harga minuman dari termurah","Urutan harga: MINERAL BOTTLE Rp.7.500, MILO Rp.27.000, KOPI HITAM Rp.30.000, AIR GURAKA Rp.31.000, KOPI SUSU/KELAPA BATOK Rp.32.000, KELAPA LENGKENG Rp.35.000, CHINESE TEA Rp.39.000, BUAH SEGAR Rp.57.000","harga_minuman_lainnya"
 "minuman yang worth it","Minuman worth it: KELAPA MUDA BATOK Rp.32.000 (segar dan sehat) atau CHINESE TEA Rp.39.000 (premium)","menu_minuman_lainnya"
 "minuman untuk yang tidak suka kopi","Minuman non-kopi: MILO Rp.27.000, AIR GURAKA Rp.31.000, KELAPA MUDA Rp.32.000-35.000, CHINESE TEA Rp.39.000, BUAH SEGAR Rp.57.000","menu_minuman_lainnya"
-
 "apakah menu populer disini?","Menu Populer di Royal's Resto yaitu: KEPITING KENARI dan DENDENG RUSA","menu_rekomendasi"
 "apa menu yang paling laris?","Menu Populer di Royal's Resto yaitu: KEPITING KENARI dan DENDENG RUSA","menu_rekomendasi"
 "menu best seller apa?","Menu Populer di Royal's Resto yaitu: KEPITING KENARI dan DENDENG RUSA","menu_rekomendasi"
@@ -1675,7 +1650,6 @@ pertanyaan,jawaban,kategorinya
 "menu andalan resto","Menu signature kami: KEPITING KENARI, IKAN BAKAR, dan ES TIGA RASA","menu_rekomendasi"
 "menu yang wajib dicoba","Menu signature kami: KEPITING KENARI, IKAN BAKAR, dan ES TIGA RASA","menu_rekomendasi"
 "makanan yang paling special","Menu signature kami: KEPITING KENARI, IKAN BAKAR, dan ES TIGA RASA","menu_rekomendasi"
-
 "apakah ada promo?","Mohon maaf kami masih belum menyediakan promo.","promo"
 "ada diskon hari ini?","Mohon maaf kami masih belum menyediakan promo atau diskon.","promo"
 "apakah ada potongan harga?","Mohon maaf kami masih belum menyediakan promo potongan harga.","promo"
@@ -1726,7 +1700,6 @@ pertanyaan,jawaban,kategorinya
 "bisakah minta diskon?","Mohon maaf, kami tidak bisa memberikan diskon secara spontan.","promo"
 "ada special price untuk saya?","Mohon maaf, kami tidak bisa memberikan special price secara individual.","promo"
 "bisa nego harga?","Mohon maaf, harga yang tertera sudah fixed dan tidak bisa dinegosiasikan.","promo"
-
 "royal's resto buka jam berapa?","Kami buka dari jam 9 pagi sampai jam 12 malam.","jam_operasional"
 "jam buka sampai kapan?","Kami buka dari jam 9 pagi sampai jam 12 malam.","jam_operasional"
 "buka jam berapa?","Kami buka dari jam 9 pagi sampai jam 12 malam.","jam_operasional"
@@ -1783,7 +1756,6 @@ pertanyaan,jawaban,kategorinya
 "tahun baru buka?","Ya, kami buka pada tahun baru dengan jam operasional normal.","jam_operasional"
 "natal buka jam berapa?","Pada hari natal, kami buka dengan jam normal dari jam 9 pagi sampai jam 12 malam.","jam_operasional"
 "special hours untuk hari raya?","Kami buka dengan jam normal untuk semua hari raya kecuali lebaran.","jam_operasional"
-
 "apakah tersedia area parkir?","Tentu saja kami menyediakan area parkir yang bisa menampung 50an motor dan 30an mobil.","fasilitas"
 "ada parkiran?","Tentu saja kami menyediakan area parkir yang bisa menampung 50an motor dan 30an mobil.","fasilitas"
 "parkir mobil ada?","Tentu saja kami menyediakan area parkir yang bisa menampung 50an motor dan 30an mobil.","fasilitas"
@@ -1857,7 +1829,6 @@ pertanyaan,jawaban,kategorinya
 "apakah ada tempat tunggu yang nyaman?","Ya, kami menyediakan lobby dengan tempat duduk yang nyaman.","fasilitas"
 "waiting area?","Ya, kami menyediakan lobby dengan tempat duduk yang nyaman.","fasilitas"
 "tempat tunggu?","Ya, kami menyediakan lobby dengan tempat duduk yang nyaman.","fasilitas"
-
 "dimana alamat royal's resto?","Alamat Royal's Resto di Jl. Branjangan, Kalumpang, Kec. Ternate Tengah, Kota Ternate, Maluku Utara.","alamat"
 "alamat lengkap dimana?","Alamat Royal's Resto di Jl. Branjangan, Kalumpang, Kec. Ternate Tengah, Kota Ternate, Maluku Utara.","alamat"
 "lokasi royal's resto?","Alamat Royal's Resto di Jl. Branjangan, Kalumpang, Kec. Ternate Tengah, Kota Ternate, Maluku Utara.","alamat"
@@ -1915,7 +1886,6 @@ pertanyaan,jawaban,kategorinya
 "apakah ada mall terdekat?","Royal's Resto dekat dengan pusat perbelanjaan di Ternate.","alamat"
 "shopping mall dekat sini?","Royal's Resto dekat dengan pusat perbelanjaan di Ternate.","alamat"
 "pusat perbelanjaan terdekat?","Royal's Resto dekat dengan pusat perbelanjaan di Ternate.","alamat"
-
 "bagaimana cara reservasi di Royal's Resto?","anda bisa menghubungi nomor telepon kami.","reservasi"
 "cara booking meja?","anda bisa menghubungi nomor telepon kami.","reservasi"
 "gimana pesan tempat?","anda bisa menghubungi nomor telepon kami.","reservasi"
@@ -1981,7 +1951,6 @@ pertanyaan,jawaban,kategorinya
 "meja dekat jendela?","Ya, bisa request meja khusus dengan tambahan biaya.","reservasi"
 "apakah bisa request dekorasi?","Ya, bisa request dekorasi dengan tambahan biaya.","reservasi"
 "hiasan untuk acara?","Ya, bisa request dekorasi dengan tambahan biaya.","reservasi"
-
 "apakah bisa bayar tunai?","Ya, bisa bayar tunai.","pembayaran"
 "bisa bayar cash?","Ya, bisa bayar tunai.","pembayaran"
 "pembayaran tunai diterima?","Ya, bisa bayar tunai.","pembayaran"
