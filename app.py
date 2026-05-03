@@ -1,22 +1,20 @@
 import pickle
-import pandas as pd
 import mysql.connector
-from preprocessing import preprocess
 from flask import Flask, request, jsonify, render_template
 from flask_cors import CORS
 import os
-import numpy as np
-from dotenv import load_dotenv
+import re
 import csv
 from datetime import datetime, timedelta
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.svm import LinearSVC
-import time
 import bcrypt
 import jwt
 from functools import wraps
 import secrets
-import re
+import time
+import numpy as np
+from dotenv import load_dotenv
 
 # ===================== Load .env =====================
 load_dotenv()
@@ -28,9 +26,9 @@ DB_NAME = os.getenv("DB_NAME")
 
 FLASK_ENV = os.getenv("FLASK_ENV")
 FLASK_DEBUG = os.getenv("FLASK_DEBUG")
-FLASK_PORT = int(os.getenv("FLASK_PORT"))
+FLASK_PORT = int(os.getenv("FLASK_PORT", 8080))
 
-ALLOWED_ORIGINS = os.getenv("ALLOWED_ORIGINS")
+ALLOWED_ORIGINS = os.getenv("ALLOWED_ORIGINS", "*")
 
 # ===================== Konfigurasi API Key =====================
 API_KEY = os.getenv("API_KEY", "RoyalsResto2024SecureKey!@#$")
@@ -39,6 +37,28 @@ API_KEY_HEADER = "X-API-Key"
 # ===================== Konfigurasi JWT =====================
 JWT_SECRET_KEY = os.getenv("JWT_SECRET_KEY", "royal_resto_chatbot_secret_key_2024")
 JWT_EXPIRATION_HOURS = int(os.getenv("JWT_EXPIRATION_HOURS", 24))
+
+# ===================== FUNGSI PREPROCESSING (Tanpa NLTK) =====================
+def preprocess(text):
+    """
+    Preprocessing teks tanpa NLTK - hanya menggunakan regex dan string methods
+    """
+    if not isinstance(text, str):
+        text = str(text)
+    
+    # Convert to lowercase
+    text = text.lower()
+    
+    # Remove special characters, keep only alphanumeric and spaces
+    text = re.sub(r'[^a-z0-9\s]', ' ', text)
+    
+    # Remove extra spaces
+    text = re.sub(r'\s+', ' ', text).strip()
+    
+    # Remove numbers (opsional, bisa dihapus jika ingin mempertahankan angka)
+    text = re.sub(r'\d+', '', text)
+    
+    return text
 
 # ===================== Helper Functions =====================
 def hash_password(password):
@@ -128,20 +148,68 @@ def get_db_connection():
         database=DB_NAME
     )
 
-# ===================== Load Model QA Tunggal =====================
-model_path = os.path.join(os.getenv("MODEL_BASE_PATH", "model/"), 'model_qa.pkl')
-with open(model_path, 'rb') as f:
-    qa_data = pickle.load(f)
+# ===================== FUNGSI LOAD DATASET (Tanpa Pandas) =====================
+def load_dataset_from_csv(csv_path):
+    """
+    Load dataset dari CSV tanpa pandas - menggunakan csv module
+    """
+    pertanyaan_list = []
+    jawaban_list = []
+    kategori_list = []
+    
+    try:
+        with open(csv_path, 'r', encoding='utf-8') as f:
+            reader = csv.DictReader(f)
+            for row in reader:
+                pertanyaan_list.append(row.get('pertanyaan', ''))
+                jawaban_list.append(row.get('jawaban', ''))
+                kategori_list.append(row.get('kategori', ''))
+    except FileNotFoundError:
+        print(f"[WARNING] File not found: {csv_path}")
+        # Buat file CSV default jika tidak ada
+        os.makedirs(os.path.dirname(csv_path), exist_ok=True)
+        with open(csv_path, 'w', encoding='utf-8', newline='') as f:
+            writer = csv.writer(f)
+            writer.writerow(['pertanyaan', 'jawaban', 'kategori'])
+            writer.writerow(['Halo', 'Halo! Selamat datang di Royal\'s Resto. Ada yang bisa saya bantu?', 'sapaan'])
+            writer.writerow(['Menu apa saja yang tersedia?', 'Kami menyediakan berbagai macam masakan Nusantara dan Internasional.', 'menu'])
+        # Load ulang setelah buat file
+        return load_dataset_from_csv(csv_path)
+    except Exception as e:
+        print(f"[ERROR] Load CSV: {e}")
+        
+    return pertanyaan_list, jawaban_list, kategori_list
 
-model_qa = qa_data['model']
-vectorizer_qa = qa_data['vectorizer']
-answers = qa_data['answers']
-pertanyaan_list = qa_data['questions']
+def save_dataset_to_csv(csv_path, pertanyaan_list, jawaban_list, kategori_list):
+    """
+    Save dataset ke CSV tanpa pandas
+    """
+    with open(csv_path, 'w', encoding='utf-8', newline='') as f:
+        writer = csv.writer(f)
+        writer.writerow(['pertanyaan', 'jawaban', 'kategori'])
+        for p, j, k in zip(pertanyaan_list, jawaban_list, kategori_list):
+            writer.writerow([p, j, k])
 
-# ===================== Load Dataset =====================
+# ===================== Load Dataset Awal =====================
 csv_path = os.getenv("DATA_PATH", "data/dataset.csv")
-df = pd.read_csv(csv_path, encoding='utf-8')
-df['processed'] = df['pertanyaan'].apply(preprocess)
+pertanyaan_list, answers, kategori_list = load_dataset_from_csv(csv_path)
+
+# ===================== LOAD MODEL (Jika ada) =====================
+model_path = os.path.join(os.getenv("MODEL_BASE_PATH", "model/"), 'model_qa.pkl')
+model_qa = None
+vectorizer_qa = None
+
+if os.path.exists(model_path):
+    try:
+        with open(model_path, 'rb') as f:
+            qa_data = pickle.load(f)
+        model_qa = qa_data.get('model')
+        vectorizer_qa = qa_data.get('vectorizer')
+        answers = qa_data.get('answers', answers)
+        pertanyaan_list = qa_data.get('questions', pertanyaan_list)
+        print("[INFO] Model loaded successfully")
+    except Exception as e:
+        print(f"[WARNING] Could not load model: {e}")
 
 # ===================== Fungsi Simpan Pertanyaan Tidak Dikenal =====================
 def save_unknown_question(question):
@@ -169,13 +237,22 @@ def chat():
         return jsonify({'error': 'Pertanyaan kosong'}), 400
 
     processed_input = preprocess(user_input)
+    
+    # Jika model belum ada, beri respons default
+    if model_qa is None or vectorizer_qa is None:
+        return jsonify({
+            'pertanyaan': user_input,
+            'jawaban': "Maaf, model belum dilatih. Silakan lakukan training terlebih dahulu di halaman admin.",
+            'status': 'error'
+        })
+    
     X_input_qa = vectorizer_qa.transform([processed_input])
 
     if X_input_qa.nnz == 0:
         save_unknown_question(user_input)
         return jsonify({
             'pertanyaan': user_input,
-            'jawaban': "Mohon maaf, saya belum mengerti pertanyaan Anda.",
+            'jawaban': "Mohon maaf, saya belum mengerti pertanyaan Anda. Tim kami akan segera mempelajari pertanyaan ini.",
             'status': 'unknown'
         })
 
@@ -199,7 +276,7 @@ def chat():
     
     if max_score < threshold:
         save_unknown_question(user_input)
-        predicted_answer = "Mohon maaf, saya belum mengerti pertanyaan Anda."
+        predicted_answer = "Mohon maaf, saya belum mengerti pertanyaan Anda. Tim kami akan segera mempelajari pertanyaan ini."
         return jsonify({
             'pertanyaan': user_input,
             'jawaban': predicted_answer,
@@ -225,7 +302,7 @@ def chat():
                 'status': 'ok'
             })
         
-        similar_questions = [pertanyaan_list[i] for i in top_indices]
+        similar_questions = [pertanyaan_list[i] for i in top_indices if i < len(pertanyaan_list)]
         return jsonify({
             'pertanyaan': user_input,
             'opsi_pertanyaan': similar_questions,
@@ -247,7 +324,7 @@ def chat():
             'status': 'ok'
         })
 
-# ===================== ENDPOINT AUTHENTICATION (dengan API Key) =====================
+# ===================== ENDPOINT AUTHENTICATION =====================
 @app.route('/login', methods=['POST'])
 @api_key_required
 def login():
@@ -839,19 +916,18 @@ def tambah_data():
             return jsonify({'error': 'Semua field harus diisi'}), 400
         
         csv_path = os.getenv("DATA_PATH", "data/dataset.csv")
+        pertanyaan_list_temp, jawaban_list_temp, kategori_list_temp = load_dataset_from_csv(csv_path)
         
-        df_existing = pd.read_csv(csv_path, encoding='utf-8')
-        df_new = pd.DataFrame([{
-            'pertanyaan': pertanyaan_baru,
-            'jawaban': jawaban_baru,
-            'kategori': kategori_baru
-        }])
-        
-        if pertanyaan_baru.lower() in df_existing['pertanyaan'].str.lower().values:
+        # Check duplicate
+        if pertanyaan_baru.lower() in [p.lower() for p in pertanyaan_list_temp]:
             return jsonify({'error': f'Pertanyaan "{pertanyaan_baru}" sudah ada di dataset', 'status': 'duplicate'}), 409
         
-        df_combined = pd.concat([df_existing, df_new], ignore_index=True)
-        df_combined.to_csv(csv_path, index=False, encoding='utf-8')
+        # Add new data
+        pertanyaan_list_temp.append(pertanyaan_baru)
+        jawaban_list_temp.append(jawaban_baru)
+        kategori_list_temp.append(kategori_baru)
+        
+        save_dataset_to_csv(csv_path, pertanyaan_list_temp, jawaban_list_temp, kategori_list_temp)
         
         return jsonify({
             'message': 'Data berhasil ditambahkan ke CSV. Silakan latih model untuk mengupdate chatbot.',
@@ -875,19 +951,40 @@ def get_all_data():
         offset = (page - 1) * per_page
         
         csv_path = os.getenv("DATA_PATH", "data/dataset.csv")
-        df_temp = pd.read_csv(csv_path, encoding='utf-8')
+        pertanyaan_temp, jawaban_temp, kategori_temp = load_dataset_from_csv(csv_path)
         
-        if search:
-            df_temp = df_temp[df_temp['pertanyaan'].str.contains(search, case=False, na=False)]
+        # Filter data
+        filtered_pertanyaan = []
+        filtered_jawaban = []
+        filtered_kategori = []
+        filtered_indices = []
         
-        if kategori_filter:
-            df_temp = df_temp[df_temp['kategori'] == kategori_filter]
+        for i, (p, j, k) in enumerate(zip(pertanyaan_temp, jawaban_temp, kategori_temp)):
+            if search and search.lower() not in p.lower():
+                continue
+            if kategori_filter and k != kategori_filter:
+                continue
+            filtered_pertanyaan.append(p)
+            filtered_jawaban.append(j)
+            filtered_kategori.append(k)
+            filtered_indices.append(i)
         
-        total_data = len(df_temp)
+        total_data = len(filtered_pertanyaan)
         total_pages = (total_data + per_page - 1) // per_page
         
-        df_paginated = df_temp.iloc[offset:offset + per_page]
-        data = df_paginated.reset_index().to_dict('records')
+        # Pagination
+        end_idx = min(offset + per_page, total_data)
+        data = []
+        for i in range(offset, end_idx):
+            data.append({
+                'index': filtered_indices[i],
+                'pertanyaan': filtered_pertanyaan[i],
+                'jawaban': filtered_jawaban[i],
+                'kategori': filtered_kategori[i]
+            })
+        
+        # Get unique categories
+        unique_categories = list(set(kategori_temp))
         
         return jsonify({
             'page': page,
@@ -895,7 +992,7 @@ def get_all_data():
             'total_data': total_data,
             'total_pages': total_pages,
             'data': data,
-            'categories': sorted(df_temp['kategori'].unique().tolist())
+            'categories': sorted(unique_categories)
         })
         
     except Exception as e:
@@ -916,16 +1013,16 @@ def update_data():
             return jsonify({'error': 'Index tidak ditemukan'}), 400
         
         csv_path = os.getenv("DATA_PATH", "data/dataset.csv")
-        df_temp = pd.read_csv(csv_path, encoding='utf-8')
+        pertanyaan_list_temp, jawaban_list_temp, kategori_list_temp = load_dataset_from_csv(csv_path)
         
-        if index < 0 or index >= len(df_temp):
+        if index < 0 or index >= len(pertanyaan_list_temp):
             return jsonify({'error': 'Index tidak valid'}), 400
         
-        df_temp.at[index, 'pertanyaan'] = pertanyaan_baru
-        df_temp.at[index, 'jawaban'] = jawaban_baru
-        df_temp.at[index, 'kategori'] = kategori_baru
+        pertanyaan_list_temp[index] = pertanyaan_baru
+        jawaban_list_temp[index] = jawaban_baru
+        kategori_list_temp[index] = kategori_baru
         
-        df_temp.to_csv(csv_path, index=False, encoding='utf-8')
+        save_dataset_to_csv(csv_path, pertanyaan_list_temp, jawaban_list_temp, kategori_list_temp)
         
         return jsonify({'message': 'Data berhasil diupdate', 'status': 'success'}), 200
         
@@ -944,13 +1041,16 @@ def delete_data():
             return jsonify({'error': 'Index tidak ditemukan'}), 400
         
         csv_path = os.getenv("DATA_PATH", "data/dataset.csv")
-        df_temp = pd.read_csv(csv_path, encoding='utf-8')
+        pertanyaan_list_temp, jawaban_list_temp, kategori_list_temp = load_dataset_from_csv(csv_path)
         
-        if index < 0 or index >= len(df_temp):
+        if index < 0 or index >= len(pertanyaan_list_temp):
             return jsonify({'error': 'Index tidak valid'}), 400
         
-        df_temp = df_temp.drop(index).reset_index(drop=True)
-        df_temp.to_csv(csv_path, index=False, encoding='utf-8')
+        del pertanyaan_list_temp[index]
+        del jawaban_list_temp[index]
+        del kategori_list_temp[index]
+        
+        save_dataset_to_csv(csv_path, pertanyaan_list_temp, jawaban_list_temp, kategori_list_temp)
         
         return jsonify({'message': 'Data berhasil dihapus', 'status': 'success'}), 200
         
@@ -967,56 +1067,63 @@ def train_model():
         
         csv_path = os.getenv("DATA_PATH", "data/dataset.csv")
         
-        print("[TRAIN] Loading dataset...")
-        df_train = pd.read_csv(csv_path, encoding='utf-8')
+        # Load dataset tanpa pandas
+        pertanyaan_list_train, jawaban_list_train, kategori_list_train = load_dataset_from_csv(csv_path)
         
-        print("[TRAIN] Preprocessing data...")
-        df_train['processed'] = df_train['pertanyaan'].astype(str).apply(preprocess)
+        if len(pertanyaan_list_train) == 0:
+            return jsonify({'error': 'Dataset kosong. Silakan tambah data terlebih dahulu.'}), 400
         
-        X_train = df_train['processed']
-        y_train = list(range(len(df_train)))
+        print(f"[TRAIN] Loading {len(pertanyaan_list_train)} questions...")
         
-        print("[TRAIN] Vectorizing text...")
+        # Preprocessing
+        processed_list = [preprocess(q) for q in pertanyaan_list_train]
+        
+        # Vectorizing
         vectorizer = TfidfVectorizer()
-        X_train_tfidf = vectorizer.fit_transform(X_train)
+        X_train_tfidf = vectorizer.fit_transform(processed_list)
         
-        print("[TRAIN] Training SVM model...")
+        # Training
+        y_train = list(range(len(pertanyaan_list_train)))
         model = LinearSVC()
         model.fit(X_train_tfidf, y_train)
         
-        print("[TRAIN] Saving model...")
+        # Saving model
         qa_data_new = {
             'model': model,
             'vectorizer': vectorizer,
-            'answers': df_train['jawaban'].tolist(),
-            'questions': df_train['pertanyaan'].tolist(),
-            'categories': df_train['kategori'].tolist()
+            'answers': jawaban_list_train,
+            'questions': pertanyaan_list_train,
+            'categories': kategori_list_train
         }
         
         model_path = os.path.join(os.getenv("MODEL_BASE_PATH", "model/"), 'model_qa.pkl')
+        os.makedirs(os.path.dirname(model_path), exist_ok=True)
+        
         with open(model_path, 'wb') as f:
             pickle.dump(qa_data_new, f)
         
-        global model_qa, vectorizer_qa, answers, pertanyaan_list, df
+        # Update global variables
+        global model_qa, vectorizer_qa, answers, pertanyaan_list
         model_qa = model
         vectorizer_qa = vectorizer
-        answers = df_train['jawaban'].tolist()
-        pertanyaan_list = df_train['pertanyaan'].tolist()
-        df = df_train
+        answers = jawaban_list_train
+        pertanyaan_list = pertanyaan_list_train
         
         training_time = time.time() - start_time
         
         return jsonify({
             'message': 'Model berhasil dilatih',
             'training_time': f'{training_time:.2f} detik',
-            'total_data': len(df_train),
-            'total_questions': len(pertanyaan_list),
-            'categories_count': len(df_train['kategori'].unique()),
+            'total_data': len(pertanyaan_list_train),
+            'total_questions': len(pertanyaan_list_train),
+            'categories_count': len(set(kategori_list_train)),
             'status': 'success'
         }), 200
         
     except Exception as e:
         print(f"[ERROR] Train model: {e}")
+        import traceback
+        traceback.print_exc()
         return jsonify({'error': f'Terjadi kesalahan saat training: {str(e)}'}), 500
 
 # ===================== ENDPOINT KATEGORI & INFO =====================
@@ -1025,8 +1132,8 @@ def train_model():
 def get_kategori():
     try:
         csv_path = os.getenv("DATA_PATH", "data/dataset.csv")
-        df_temp = pd.read_csv(csv_path, encoding='utf-8')
-        categories = sorted(df_temp['kategori'].unique().tolist())
+        _, _, kategori_list_temp = load_dataset_from_csv(csv_path)
+        categories = sorted(list(set(kategori_list_temp)))
         return jsonify({'kategori': categories})
     except Exception as e:
         print(f"[ERROR] Get kategori: {e}")
@@ -1039,7 +1146,7 @@ def model_info():
         return jsonify({
             'total_questions': len(pertanyaan_list),
             'total_answers': len(answers),
-            'categories': sorted(df['kategori'].unique().tolist()),
+            'categories': sorted(list(set(kategori_list))) if kategori_list else [],
             'model_loaded': model_qa is not None,
             'vectorizer_loaded': vectorizer_qa is not None
         })
@@ -1055,7 +1162,6 @@ def cek_csv():
         with open(csv_path, 'r', encoding='utf-8') as f:
             lines = f.readlines()
         
-        import csv
         reader = csv.reader(lines)
         rows = list(reader)
         
@@ -1073,18 +1179,23 @@ def cek_csv():
 def fix_csv():
     try:
         csv_path = os.getenv("DATA_PATH", "data/dataset.csv")
-        df_temp = pd.read_csv(csv_path, encoding='utf-8', on_bad_lines='skip')
         
+        # Baca CSV dengan csv module
+        pertanyaan_temp, jawaban_temp, kategori_temp = load_dataset_from_csv(csv_path)
+        
+        # Backup
         backup_path = csv_path.replace('.csv', '_backup.csv')
         import shutil
-        shutil.copy(csv_path, backup_path)
+        if os.path.exists(csv_path):
+            shutil.copy(csv_path, backup_path)
         
-        df_temp.to_csv(csv_path, index=False, encoding='utf-8')
+        # Simpan ulang
+        save_dataset_to_csv(csv_path, pertanyaan_temp, jawaban_temp, kategori_temp)
         
         return jsonify({
             'message': 'CSV berhasil diperbaiki',
             'backup_path': backup_path,
-            'total_rows': len(df_temp)
+            'total_rows': len(pertanyaan_temp)
         })
     except Exception as e:
         return jsonify({'error': str(e)}), 500
@@ -1101,7 +1212,6 @@ def generate_new_api_key():
         # Generate API Key baru
         new_api_key = secrets.token_hex(32)
         
-        # Simpan ke file .env atau database
         # Untuk sementara, return key nya saja
         return jsonify({
             'message': 'API Key baru berhasil digenerate',
@@ -1112,12 +1222,20 @@ def generate_new_api_key():
         print(f"[ERROR] Generate API Key: {e}")
         return jsonify({'error': str(e)}), 500
 
+# ===================== MAIN =====================
 if __name__ == '__main__':
     print("=" * 50)
-    print("🚀 Royal's Resto Chatbot API Server")
+    print("🚀 Royal's Resto Chatbot API Server (Optimized Version)")
     print("=" * 50)
     print(f"📡 Server running on: http://localhost:{FLASK_PORT}")
     print(f"🔑 API Key: {API_KEY}")
+    print(f"📊 Dataset path: {csv_path}")
+    print(f"🤖 Model path: {model_path}")
     print("⚠️  Semua endpoint memerlukan API Key di header: X-API-Key")
     print("=" * 50)
-    app.run(debug=FLASK_DEBUG, port=FLASK_PORT)
+    
+    # Buat folder yang diperlukan jika belum ada
+    os.makedirs(os.path.dirname(csv_path), exist_ok=True)
+    os.makedirs(os.path.dirname(model_path), exist_ok=True)
+    
+    app.run(debug=FLASK_DEBUG == 'True', port=FLASK_PORT, host='0.0.0.0')
