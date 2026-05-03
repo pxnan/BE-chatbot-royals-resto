@@ -134,9 +134,25 @@ def get_client_ip():
         ip = request.remote_addr
     return ip
 
-# ===================== Inisialisasi Flask =====================
+# ===================== Inisialisasi Flask dengan CORS Lengkap =====================
 app = Flask(__name__)
-CORS(app, origins=ALLOWED_ORIGINS)
+
+# Konfigurasi CORS yang lebih robust
+CORS(app, 
+     origins=ALLOWED_ORIGINS,
+     supports_credentials=True,
+     allow_headers=['Content-Type', 'Authorization', 'X-API-Key'],
+     methods=['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+     expose_headers=['Content-Type', 'Authorization'])
+
+# Tambahkan handler untuk preflight requests OPTIONS
+@app.after_request
+def after_request(response):
+    response.headers.add('Access-Control-Allow-Origin', ALLOWED_ORIGINS)
+    response.headers.add('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-API-Key')
+    response.headers.add('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS')
+    response.headers.add('Access-Control-Allow-Credentials', 'true')
+    return response
 
 # ===================== Fungsi Koneksi Database MySQL =====================
 def get_db_connection():
@@ -173,6 +189,9 @@ def load_dataset_from_csv(csv_path):
             writer.writerow(['pertanyaan', 'jawaban', 'kategori'])
             writer.writerow(['Halo', 'Halo! Selamat datang di Royal\'s Resto. Ada yang bisa saya bantu?', 'sapaan'])
             writer.writerow(['Menu apa saja yang tersedia?', 'Kami menyediakan berbagai macam masakan Nusantara dan Internasional.', 'menu'])
+            writer.writerow(['Apa itu Royal Resto?', 'Royal\'s Resto adalah restoran yang menyajikan berbagai masakan khas Nusantara dengan cita rasa istimewa.', 'tentang'])
+            writer.writerow(['Dimana lokasi Royal Resto?', 'Kami berlokasi di Jalan Raya Royal No. 123, Kota Royal.', 'lokasi'])
+            writer.writerow(['Jam operasional Royal Resto?', 'Kami buka setiap hari dari pukul 10.00 - 22.00 WIB.', 'jam_operasional'])
         # Load ulang setelah buat file
         return load_dataset_from_csv(csv_path)
     except Exception as e:
@@ -229,9 +248,12 @@ def save_unknown_question(question):
 def index():
     return render_template('index.html')
 
-@app.route('/chat', methods=['POST'])
+@app.route('/chat', methods=['GET', 'POST', 'OPTIONS'])
 @api_key_required
 def chat():
+    if request.method == 'OPTIONS':
+        return '', 200
+        
     user_input = request.json.get('pertanyaan', '')
     if not user_input:
         return jsonify({'error': 'Pertanyaan kosong'}), 400
@@ -325,9 +347,12 @@ def chat():
         })
 
 # ===================== ENDPOINT AUTHENTICATION =====================
-@app.route('/login', methods=['POST'])
+@app.route('/login', methods=['GET', 'POST', 'OPTIONS'])
 @api_key_required
 def login():
+    if request.method == 'OPTIONS':
+        return '', 200
+        
     try:
         data = request.json
         username = data.get('username', '').strip()
@@ -419,10 +444,13 @@ def login():
         traceback.print_exc()
         return jsonify({'error': 'Terjadi kesalahan saat login', 'authenticated': False}), 500
 
-@app.route('/logout', methods=['POST'])
+@app.route('/logout', methods=['GET', 'POST', 'OPTIONS'])
 @api_key_required
 @token_required
 def logout():
+    if request.method == 'OPTIONS':
+        return '', 200
+        
     try:
         token = request.headers.get('Authorization')
         if token and token.startswith('Bearer '):
@@ -441,9 +469,12 @@ def logout():
         print(f"[ERROR] Logout: {e}")
         return jsonify({'error': 'Terjadi kesalahan saat logout'}), 500
 
-@app.route('/verify-token', methods=['GET'])
+@app.route('/verify-token', methods=['GET', 'OPTIONS'])
 @api_key_required
 def verify_token_endpoint():
+    if request.method == 'OPTIONS':
+        return '', 200
+        
     try:
         token = request.headers.get('Authorization')
         
@@ -479,10 +510,13 @@ def verify_token_endpoint():
         print(f"[ERROR] Verify token: {e}")
         return jsonify({'authenticated': False, 'error': str(e)}), 500
 
-@app.route('/change-password', methods=['POST'])
+@app.route('/change-password', methods=['GET', 'POST', 'OPTIONS'])
 @api_key_required
 @token_required
 def change_password():
+    if request.method == 'OPTIONS':
+        return '', 200
+        
     try:
         data = request.json
         old_password = data.get('old_password', '').strip()
@@ -544,9 +578,18 @@ def change_password():
         return jsonify({'error': 'Terjadi kesalahan saat mengganti password'}), 500
 
 # ===================== ENDPOINT KELOLA ADMIN (HANYA SUPER ADMIN) =====================
-@app.route('/api/admins', methods=['GET'])
+@app.route('/api/admins', methods=['GET', 'POST', 'OPTIONS'])
 @api_key_required
 @token_required
+def admins_handler():
+    if request.method == 'OPTIONS':
+        return '', 200
+    
+    if request.method == 'GET':
+        return get_all_admins()
+    elif request.method == 'POST':
+        return create_admin()
+
 def get_all_admins():
     try:
         if request.admin['role'] != 'super_admin':
@@ -607,9 +650,6 @@ def get_all_admins():
         print(f"[ERROR] Get all admins: {e}")
         return jsonify({'error': str(e)}), 500
 
-@app.route('/api/admins', methods=['POST'])
-@api_key_required
-@token_required
 def create_admin():
     try:
         if request.admin['role'] != 'super_admin':
@@ -663,9 +703,18 @@ def create_admin():
         print(f"[ERROR] Create admin: {e}")
         return jsonify({'error': str(e)}), 500
 
-@app.route('/api/admins/<int:admin_id>', methods=['PUT'])
+@app.route('/api/admins/<int:admin_id>', methods=['GET', 'PUT', 'DELETE', 'OPTIONS'])
 @api_key_required
 @token_required
+def admin_detail_handler(admin_id):
+    if request.method == 'OPTIONS':
+        return '', 200
+    
+    if request.method == 'PUT':
+        return update_admin(admin_id)
+    elif request.method == 'DELETE':
+        return delete_admin(admin_id)
+
 def update_admin(admin_id):
     try:
         if request.admin['role'] != 'super_admin':
@@ -707,10 +756,44 @@ def update_admin(admin_id):
         print(f"[ERROR] Update admin: {e}")
         return jsonify({'error': str(e)}), 500
 
-@app.route('/api/admins/<int:admin_id>/reset-password', methods=['POST'])
+def delete_admin(admin_id):
+    try:
+        if request.admin['role'] != 'super_admin':
+            return jsonify({'error': 'Anda tidak memiliki izin untuk menghapus admin'}), 403
+        
+        if request.admin['admin_id'] == admin_id:
+            return jsonify({'error': 'Anda tidak dapat menghapus akun Anda sendiri'}), 400
+        
+        conn = get_db_connection()
+        cursor = conn.cursor(dictionary=True)
+        
+        cursor.execute("SELECT id FROM admin WHERE id = %s", (admin_id,))
+        if not cursor.fetchone():
+            cursor.close()
+            conn.close()
+            return jsonify({'error': 'Admin tidak ditemukan'}), 404
+        
+        cursor.execute("DELETE FROM admin_sessions WHERE admin_id = %s", (admin_id,))
+        cursor.execute("DELETE FROM login_logs WHERE admin_id = %s", (admin_id,))
+        cursor.execute("DELETE FROM admin WHERE id = %s", (admin_id,))
+        
+        conn.commit()
+        cursor.close()
+        conn.close()
+        
+        return jsonify({'message': 'Admin berhasil dihapus'}), 200
+        
+    except Exception as e:
+        print(f"[ERROR] Delete admin: {e}")
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/admins/<int:admin_id>/reset-password', methods=['POST', 'OPTIONS'])
 @api_key_required
 @token_required
 def reset_admin_password(admin_id):
+    if request.method == 'OPTIONS':
+        return '', 200
+        
     try:
         if request.admin['role'] != 'super_admin':
             return jsonify({'error': 'Anda tidak memiliki izin untuk reset password'}), 403
@@ -746,44 +829,13 @@ def reset_admin_password(admin_id):
         print(f"[ERROR] Reset password: {e}")
         return jsonify({'error': str(e)}), 500
 
-@app.route('/api/admins/<int:admin_id>', methods=['DELETE'])
-@api_key_required
-@token_required
-def delete_admin(admin_id):
-    try:
-        if request.admin['role'] != 'super_admin':
-            return jsonify({'error': 'Anda tidak memiliki izin untuk menghapus admin'}), 403
-        
-        if request.admin['admin_id'] == admin_id:
-            return jsonify({'error': 'Anda tidak dapat menghapus akun Anda sendiri'}), 400
-        
-        conn = get_db_connection()
-        cursor = conn.cursor(dictionary=True)
-        
-        cursor.execute("SELECT id FROM admin WHERE id = %s", (admin_id,))
-        if not cursor.fetchone():
-            cursor.close()
-            conn.close()
-            return jsonify({'error': 'Admin tidak ditemukan'}), 404
-        
-        cursor.execute("DELETE FROM admin_sessions WHERE admin_id = %s", (admin_id,))
-        cursor.execute("DELETE FROM login_logs WHERE admin_id = %s", (admin_id,))
-        cursor.execute("DELETE FROM admin WHERE id = %s", (admin_id,))
-        
-        conn.commit()
-        cursor.close()
-        conn.close()
-        
-        return jsonify({'message': 'Admin berhasil dihapus'}), 200
-        
-    except Exception as e:
-        print(f"[ERROR] Delete admin: {e}")
-        return jsonify({'error': str(e)}), 500
-
-@app.route('/api/profile', methods=['GET'])
+@app.route('/api/profile', methods=['GET', 'OPTIONS'])
 @api_key_required
 @token_required
 def get_current_admin_profile():
+    if request.method == 'OPTIONS':
+        return '', 200
+        
     try:
         admin_id = request.admin['admin_id']
         
@@ -812,9 +864,12 @@ def get_current_admin_profile():
         return jsonify({'error': str(e)}), 500
 
 # ===================== ENDPOINT UNTUK UNKNOWN QUESTIONS =====================
-@app.route('/pertanyaan-unknown', methods=['GET'])
+@app.route('/pertanyaan-unknown', methods=['GET', 'OPTIONS'])
 @api_key_required
 def get_unknown_questions():
+    if request.method == 'OPTIONS':
+        return '', 200
+        
     try:
         page = request.args.get('page', default=1, type=int)
         per_page = 10
@@ -849,9 +904,12 @@ def get_unknown_questions():
         print(f"[DB ERROR] {e}")
         return jsonify({'error': 'Gagal mengambil data dari database'}), 500
 
-@app.route('/delete-unknown', methods=['DELETE'])
+@app.route('/delete-unknown', methods=['DELETE', 'OPTIONS'])
 @api_key_required
 def delete_unknown():
+    if request.method == 'OPTIONS':
+        return '', 200
+        
     try:
         data = request.json
         unknown_id = data.get('id')
@@ -878,9 +936,12 @@ def delete_unknown():
         print(f"[ERROR] Delete unknown: {e}")
         return jsonify({'error': str(e)}), 500
 
-@app.route('/delete-all-unknown', methods=['DELETE'])
+@app.route('/delete-all-unknown', methods=['DELETE', 'OPTIONS'])
 @api_key_required
 def delete_all_unknown():
+    if request.method == 'OPTIONS':
+        return '', 200
+        
     try:
         conn = get_db_connection()
         cursor = conn.cursor()
@@ -903,9 +964,12 @@ def delete_all_unknown():
         return jsonify({'error': str(e)}), 500
 
 # ===================== ENDPOINT KELOLA DATASET =====================
-@app.route('/tambah-data', methods=['POST'])
+@app.route('/tambah-data', methods=['POST', 'OPTIONS'])
 @api_key_required
 def tambah_data():
+    if request.method == 'OPTIONS':
+        return '', 200
+        
     try:
         data = request.json
         pertanyaan_baru = data.get('pertanyaan', '').strip()
@@ -939,9 +1003,12 @@ def tambah_data():
         print(f"[ERROR] Tambah data: {e}")
         return jsonify({'error': f'Terjadi kesalahan: {str(e)}'}), 500
 
-@app.route('/get-all-data', methods=['GET'])
+@app.route('/get-all-data', methods=['GET', 'OPTIONS'])
 @api_key_required
 def get_all_data():
+    if request.method == 'OPTIONS':
+        return '', 200
+        
     try:
         page = request.args.get('page', default=1, type=int)
         per_page = request.args.get('per_page', default=20, type=int)
@@ -999,9 +1066,12 @@ def get_all_data():
         print(f"[ERROR] Get all data: {e}")
         return jsonify({'error': str(e)}), 500
 
-@app.route('/update-data', methods=['PUT'])
+@app.route('/update-data', methods=['PUT', 'OPTIONS'])
 @api_key_required
 def update_data():
+    if request.method == 'OPTIONS':
+        return '', 200
+        
     try:
         data = request.json
         index = data.get('index')
@@ -1030,9 +1100,12 @@ def update_data():
         print(f"[ERROR] Update data: {e}")
         return jsonify({'error': str(e)}), 500
 
-@app.route('/delete-data', methods=['DELETE'])
+@app.route('/delete-data', methods=['DELETE', 'OPTIONS'])
 @api_key_required
 def delete_data():
+    if request.method == 'OPTIONS':
+        return '', 200
+        
     try:
         data = request.json
         index = data.get('index')
@@ -1059,9 +1132,12 @@ def delete_data():
         return jsonify({'error': str(e)}), 500
 
 # ===================== ENDPOINT TRAINING MODEL =====================
-@app.route('/train-model', methods=['POST'])
+@app.route('/train-model', methods=['POST', 'OPTIONS'])
 @api_key_required
 def train_model():
+    if request.method == 'OPTIONS':
+        return '', 200
+        
     try:
         start_time = time.time()
         
@@ -1103,11 +1179,12 @@ def train_model():
             pickle.dump(qa_data_new, f)
         
         # Update global variables
-        global model_qa, vectorizer_qa, answers, pertanyaan_list
+        global model_qa, vectorizer_qa, answers, pertanyaan_list, kategori_list
         model_qa = model
         vectorizer_qa = vectorizer
         answers = jawaban_list_train
         pertanyaan_list = pertanyaan_list_train
+        kategori_list = kategori_list_train
         
         training_time = time.time() - start_time
         
@@ -1127,9 +1204,12 @@ def train_model():
         return jsonify({'error': f'Terjadi kesalahan saat training: {str(e)}'}), 500
 
 # ===================== ENDPOINT KATEGORI & INFO =====================
-@app.route('/kategori', methods=['GET'])
+@app.route('/kategori', methods=['GET', 'OPTIONS'])
 @api_key_required
 def get_kategori():
+    if request.method == 'OPTIONS':
+        return '', 200
+        
     try:
         csv_path = os.getenv("DATA_PATH", "data/dataset.csv")
         _, _, kategori_list_temp = load_dataset_from_csv(csv_path)
@@ -1139,9 +1219,12 @@ def get_kategori():
         print(f"[ERROR] Get kategori: {e}")
         return jsonify({'error': 'Gagal mengambil daftar kategori'}), 500
 
-@app.route('/model-info', methods=['GET'])
+@app.route('/model-info', methods=['GET', 'OPTIONS'])
 @api_key_required
 def model_info():
+    if request.method == 'OPTIONS':
+        return '', 200
+        
     try:
         return jsonify({
             'total_questions': len(pertanyaan_list),
@@ -1154,9 +1237,12 @@ def model_info():
         return jsonify({'error': str(e)}), 500
 
 # ===================== ENDPOINT DEBUG =====================
-@app.route('/cek-csv', methods=['GET'])
+@app.route('/cek-csv', methods=['GET', 'OPTIONS'])
 @api_key_required
 def cek_csv():
+    if request.method == 'OPTIONS':
+        return '', 200
+        
     try:
         csv_path = os.getenv("DATA_PATH", "data/dataset.csv")
         with open(csv_path, 'r', encoding='utf-8') as f:
@@ -1174,9 +1260,12 @@ def cek_csv():
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
-@app.route('/fix-csv', methods=['POST'])
+@app.route('/fix-csv', methods=['POST', 'OPTIONS'])
 @api_key_required
 def fix_csv():
+    if request.method == 'OPTIONS':
+        return '', 200
+        
     try:
         csv_path = os.getenv("DATA_PATH", "data/dataset.csv")
         
@@ -1201,10 +1290,13 @@ def fix_csv():
         return jsonify({'error': str(e)}), 500
 
 # ===================== ENDPOINT UNTUK GENERATE API KEY (HANYA SUPER ADMIN) =====================
-@app.route('/api/generate-api-key', methods=['POST'])
+@app.route('/api/generate-api-key', methods=['POST', 'OPTIONS'])
 @token_required
 def generate_new_api_key():
     """Endpoint untuk generate API Key baru (hanya super admin)"""
+    if request.method == 'OPTIONS':
+        return '', 200
+        
     try:
         if request.admin['role'] != 'super_admin':
             return jsonify({'error': 'Anda tidak memiliki izin untuk generate API Key'}), 403
@@ -1222,15 +1314,27 @@ def generate_new_api_key():
         print(f"[ERROR] Generate API Key: {e}")
         return jsonify({'error': str(e)}), 500
 
+# ===================== HEALTH CHECK =====================
+@app.route('/health', methods=['GET', 'OPTIONS'])
+def health_check():
+    if request.method == 'OPTIONS':
+        return '', 200
+    return jsonify({
+        'status': 'healthy',
+        'message': 'API is running',
+        'timestamp': datetime.now().isoformat()
+    }), 200
+
 # ===================== MAIN =====================
 if __name__ == '__main__':
     print("=" * 50)
-    print("🚀 Royal's Resto Chatbot API Server (Optimized Version)")
+    print("🚀 Royal's Resto Chatbot API Server (Optimized Version with CORS)")
     print("=" * 50)
     print(f"📡 Server running on: http://localhost:{FLASK_PORT}")
     print(f"🔑 API Key: {API_KEY}")
     print(f"📊 Dataset path: {csv_path}")
     print(f"🤖 Model path: {model_path}")
+    print(f"🌐 CORS Enabled for: {ALLOWED_ORIGINS}")
     print("⚠️  Semua endpoint memerlukan API Key di header: X-API-Key")
     print("=" * 50)
     
