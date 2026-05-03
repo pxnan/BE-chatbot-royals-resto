@@ -137,8 +137,24 @@ def get_client_ip():
 # ===================== Inisialisasi Flask dengan CORS Lengkap =====================
 app = Flask(__name__)
 
-# Konfigurasi CORS yang lebih robust
-CORS(app, origins=ALLOWED_ORIGINS)
+CORS(app, 
+    origins=["https://royals-resto-bot.vercel.app", "http://localhost:3000", "http://localhost:5173"],
+    supports_credentials=True,
+    allow_headers=['Content-Type', 'Authorization', 'X-API-Key', 'Accept'],
+    methods=['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH'],
+    expose_headers=['Content-Type', 'Authorization'])
+
+# Handler khusus untuk OPTIONS request (preflight)
+@app.before_request
+def handle_preflight():
+    if request.method == "OPTIONS":
+        response = jsonify({'message': 'Preflight request successful'})
+        response.headers.add("Access-Control-Allow-Origin", "https://royals-resto-bot.vercel.app")
+        response.headers.add("Access-Control-Allow-Credentials", "true")
+        response.headers.add("Access-Control-Allow-Headers", "X-API-Key, Authorization, Content-Type, Accept")
+        response.headers.add("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS, PATCH")
+        response.status_code = 200
+        return response
 
 # ===================== Fungsi Koneksi Database MySQL =====================
 def get_db_connection():
