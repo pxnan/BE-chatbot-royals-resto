@@ -138,21 +138,7 @@ def get_client_ip():
 app = Flask(__name__)
 
 # Konfigurasi CORS yang lebih robust
-CORS(app, 
-     origins=ALLOWED_ORIGINS,
-     supports_credentials=True,
-     allow_headers=['Content-Type', 'Authorization', 'X-API-Key'],
-     methods=['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-     expose_headers=['Content-Type', 'Authorization'])
-
-# Tambahkan handler untuk preflight requests OPTIONS
-@app.after_request
-def after_request(response):
-    response.headers.add('Access-Control-Allow-Origin', ALLOWED_ORIGINS)
-    response.headers.add('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-API-Key')
-    response.headers.add('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS')
-    response.headers.add('Access-Control-Allow-Credentials', 'true')
-    return response
+CORS(app, origins=ALLOWED_ORIGINS)
 
 # ===================== Fungsi Koneksi Database MySQL =====================
 def get_db_connection():
