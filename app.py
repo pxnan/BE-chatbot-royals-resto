@@ -15,6 +15,8 @@ import time
 import bcrypt
 import jwt
 from functools import wraps
+import secrets
+import re
 
 # ===================== Load .env =====================
 load_dotenv()
@@ -29,6 +31,10 @@ FLASK_DEBUG = os.getenv("FLASK_DEBUG")
 FLASK_PORT = int(os.getenv("FLASK_PORT"))
 
 ALLOWED_ORIGINS = os.getenv("ALLOWED_ORIGINS")
+
+# ===================== Konfigurasi API Key =====================
+API_KEY = os.getenv("API_KEY", "RoyalsResto2024SecureKey!@#$")
+API_KEY_HEADER = "X-API-Key"
 
 # ===================== Konfigurasi JWT =====================
 JWT_SECRET_KEY = os.getenv("JWT_SECRET_KEY", "royal_resto_chatbot_secret_key_2024")
@@ -85,6 +91,21 @@ def token_required(f):
         return f(*args, **kwargs)
     return decorated
 
+def api_key_required(f):
+    """Decorator untuk memproteksi endpoint dengan API Key"""
+    @wraps(f)
+    def decorated(*args, **kwargs):
+        api_key = request.headers.get(API_KEY_HEADER)
+        
+        if not api_key:
+            return jsonify({'error': 'API Key tidak ditemukan', 'authenticated': False}), 401
+        
+        if api_key != API_KEY:
+            return jsonify({'error': 'API Key tidak valid', 'authenticated': False}), 401
+        
+        return f(*args, **kwargs)
+    return decorated
+
 def get_client_ip():
     """Mendapatkan IP address client"""
     if request.headers.get('X-Forwarded-For'):
@@ -135,12 +156,13 @@ def save_unknown_question(question):
     except Exception as e:
         print(f"[DB ERROR] {e}")
 
-# ===================== ENDPOINT CHATBOT =====================
+# ===================== ENDPOINT CHATBOT (dengan API Key) =====================
 @app.route('/')
 def index():
     return render_template('index.html')
 
 @app.route('/chat', methods=['POST'])
+@api_key_required
 def chat():
     user_input = request.json.get('pertanyaan', '')
     if not user_input:
@@ -225,8 +247,9 @@ def chat():
             'status': 'ok'
         })
 
-# ===================== ENDPOINT AUTHENTICATION =====================
+# ===================== ENDPOINT AUTHENTICATION (dengan API Key) =====================
 @app.route('/login', methods=['POST'])
+@api_key_required
 def login():
     try:
         data = request.json
@@ -320,6 +343,7 @@ def login():
         return jsonify({'error': 'Terjadi kesalahan saat login', 'authenticated': False}), 500
 
 @app.route('/logout', methods=['POST'])
+@api_key_required
 @token_required
 def logout():
     try:
@@ -341,6 +365,7 @@ def logout():
         return jsonify({'error': 'Terjadi kesalahan saat logout'}), 500
 
 @app.route('/verify-token', methods=['GET'])
+@api_key_required
 def verify_token_endpoint():
     try:
         token = request.headers.get('Authorization')
@@ -377,8 +402,73 @@ def verify_token_endpoint():
         print(f"[ERROR] Verify token: {e}")
         return jsonify({'authenticated': False, 'error': str(e)}), 500
 
+@app.route('/change-password', methods=['POST'])
+@api_key_required
+@token_required
+def change_password():
+    try:
+        data = request.json
+        old_password = data.get('old_password', '').strip()
+        new_password = data.get('new_password', '').strip()
+        confirm_password = data.get('confirm_password', '').strip()
+        
+        if not old_password or not new_password or not confirm_password:
+            return jsonify({'error': 'Semua field harus diisi'}), 400
+        
+        if new_password != confirm_password:
+            return jsonify({'error': 'Password baru tidak cocok'}), 400
+        
+        if len(new_password) < 6:
+            return jsonify({'error': 'Password minimal 6 karakter'}), 400
+        
+        admin_id = request.admin['admin_id']
+        
+        conn = get_db_connection()
+        cursor = conn.cursor(dictionary=True)
+        
+        cursor.execute("SELECT password FROM admin WHERE id = %s", (admin_id,))
+        admin = cursor.fetchone()
+        
+        if not admin:
+            cursor.close()
+            conn.close()
+            return jsonify({'error': 'Admin tidak ditemukan'}), 404
+        
+        if not verify_password(old_password, admin['password']):
+            cursor.close()
+            conn.close()
+            return jsonify({'error': 'Password lama salah'}), 401
+        
+        new_password_hash = hash_password(new_password)
+        
+        cursor.execute(
+            "UPDATE admin SET password = %s, updated_at = NOW() WHERE id = %s",
+            (new_password_hash, admin_id)
+        )
+        conn.commit()
+        
+        current_token = request.headers.get('Authorization')
+        if current_token and current_token.startswith('Bearer '):
+            current_token = current_token[7:]
+        
+        cursor.execute(
+            "DELETE FROM admin_sessions WHERE admin_id = %s AND session_token != %s",
+            (admin_id, current_token)
+        )
+        conn.commit()
+        
+        cursor.close()
+        conn.close()
+        
+        return jsonify({'message': 'Password berhasil diubah'}), 200
+        
+    except Exception as e:
+        print(f"[ERROR] Change password: {e}")
+        return jsonify({'error': 'Terjadi kesalahan saat mengganti password'}), 500
+
 # ===================== ENDPOINT KELOLA ADMIN (HANYA SUPER ADMIN) =====================
 @app.route('/api/admins', methods=['GET'])
+@api_key_required
 @token_required
 def get_all_admins():
     try:
@@ -441,6 +531,7 @@ def get_all_admins():
         return jsonify({'error': str(e)}), 500
 
 @app.route('/api/admins', methods=['POST'])
+@api_key_required
 @token_required
 def create_admin():
     try:
@@ -496,6 +587,7 @@ def create_admin():
         return jsonify({'error': str(e)}), 500
 
 @app.route('/api/admins/<int:admin_id>', methods=['PUT'])
+@api_key_required
 @token_required
 def update_admin(admin_id):
     try:
@@ -539,6 +631,7 @@ def update_admin(admin_id):
         return jsonify({'error': str(e)}), 500
 
 @app.route('/api/admins/<int:admin_id>/reset-password', methods=['POST'])
+@api_key_required
 @token_required
 def reset_admin_password(admin_id):
     try:
@@ -577,6 +670,7 @@ def reset_admin_password(admin_id):
         return jsonify({'error': str(e)}), 500
 
 @app.route('/api/admins/<int:admin_id>', methods=['DELETE'])
+@api_key_required
 @token_required
 def delete_admin(admin_id):
     try:
@@ -610,6 +704,7 @@ def delete_admin(admin_id):
         return jsonify({'error': str(e)}), 500
 
 @app.route('/api/profile', methods=['GET'])
+@api_key_required
 @token_required
 def get_current_admin_profile():
     try:
@@ -641,6 +736,7 @@ def get_current_admin_profile():
 
 # ===================== ENDPOINT UNTUK UNKNOWN QUESTIONS =====================
 @app.route('/pertanyaan-unknown', methods=['GET'])
+@api_key_required
 def get_unknown_questions():
     try:
         page = request.args.get('page', default=1, type=int)
@@ -677,6 +773,7 @@ def get_unknown_questions():
         return jsonify({'error': 'Gagal mengambil data dari database'}), 500
 
 @app.route('/delete-unknown', methods=['DELETE'])
+@api_key_required
 def delete_unknown():
     try:
         data = request.json
@@ -705,6 +802,7 @@ def delete_unknown():
         return jsonify({'error': str(e)}), 500
 
 @app.route('/delete-all-unknown', methods=['DELETE'])
+@api_key_required
 def delete_all_unknown():
     try:
         conn = get_db_connection()
@@ -729,6 +827,7 @@ def delete_all_unknown():
 
 # ===================== ENDPOINT KELOLA DATASET =====================
 @app.route('/tambah-data', methods=['POST'])
+@api_key_required
 def tambah_data():
     try:
         data = request.json
@@ -765,6 +864,7 @@ def tambah_data():
         return jsonify({'error': f'Terjadi kesalahan: {str(e)}'}), 500
 
 @app.route('/get-all-data', methods=['GET'])
+@api_key_required
 def get_all_data():
     try:
         page = request.args.get('page', default=1, type=int)
@@ -803,6 +903,7 @@ def get_all_data():
         return jsonify({'error': str(e)}), 500
 
 @app.route('/update-data', methods=['PUT'])
+@api_key_required
 def update_data():
     try:
         data = request.json
@@ -833,6 +934,7 @@ def update_data():
         return jsonify({'error': str(e)}), 500
 
 @app.route('/delete-data', methods=['DELETE'])
+@api_key_required
 def delete_data():
     try:
         data = request.json
@@ -858,6 +960,7 @@ def delete_data():
 
 # ===================== ENDPOINT TRAINING MODEL =====================
 @app.route('/train-model', methods=['POST'])
+@api_key_required
 def train_model():
     try:
         start_time = time.time()
@@ -918,6 +1021,7 @@ def train_model():
 
 # ===================== ENDPOINT KATEGORI & INFO =====================
 @app.route('/kategori', methods=['GET'])
+@api_key_required
 def get_kategori():
     try:
         csv_path = os.getenv("DATA_PATH", "data/dataset.csv")
@@ -929,6 +1033,7 @@ def get_kategori():
         return jsonify({'error': 'Gagal mengambil daftar kategori'}), 500
 
 @app.route('/model-info', methods=['GET'])
+@api_key_required
 def model_info():
     try:
         return jsonify({
@@ -943,6 +1048,7 @@ def model_info():
 
 # ===================== ENDPOINT DEBUG =====================
 @app.route('/cek-csv', methods=['GET'])
+@api_key_required
 def cek_csv():
     try:
         csv_path = os.getenv("DATA_PATH", "data/dataset.csv")
@@ -963,6 +1069,7 @@ def cek_csv():
         return jsonify({'error': str(e)}), 500
 
 @app.route('/fix-csv', methods=['POST'])
+@api_key_required
 def fix_csv():
     try:
         csv_path = os.getenv("DATA_PATH", "data/dataset.csv")
@@ -982,5 +1089,35 @@ def fix_csv():
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
+# ===================== ENDPOINT UNTUK GENERATE API KEY (HANYA SUPER ADMIN) =====================
+@app.route('/api/generate-api-key', methods=['POST'])
+@token_required
+def generate_new_api_key():
+    """Endpoint untuk generate API Key baru (hanya super admin)"""
+    try:
+        if request.admin['role'] != 'super_admin':
+            return jsonify({'error': 'Anda tidak memiliki izin untuk generate API Key'}), 403
+        
+        # Generate API Key baru
+        new_api_key = secrets.token_hex(32)
+        
+        # Simpan ke file .env atau database
+        # Untuk sementara, return key nya saja
+        return jsonify({
+            'message': 'API Key baru berhasil digenerate',
+            'api_key': new_api_key
+        }), 200
+        
+    except Exception as e:
+        print(f"[ERROR] Generate API Key: {e}")
+        return jsonify({'error': str(e)}), 500
+
 if __name__ == '__main__':
+    print("=" * 50)
+    print("🚀 Royal's Resto Chatbot API Server")
+    print("=" * 50)
+    print(f"📡 Server running on: http://localhost:{FLASK_PORT}")
+    print(f"🔑 API Key: {API_KEY}")
+    print("⚠️  Semua endpoint memerlukan API Key di header: X-API-Key")
+    print("=" * 50)
     app.run(debug=FLASK_DEBUG, port=FLASK_PORT)

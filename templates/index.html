@@ -4,33 +4,165 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>API Chatbot Royal's Resto</title>
+    <title>API Chatbot Royal's Resto - Dokumentasi Lengkap</title>
     <style>
-        body {
-            font-family: Arial, sans-serif;
-            background-color: black;
-            color: white;
-            padding: 20px;
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
         }
 
-        h1,
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            background-color: #0a0a0a;
+            color: #e5e5e5;
+            padding: 20px;
+            line-height: 1.6;
+        }
+
+        h1, h2, h3 {
+            color: #3b82f6;
+        }
+
+        h1 {
+            font-size: 2.5rem;
+            margin-bottom: 1rem;
+            border-bottom: 2px solid #3b82f6;
+            padding-bottom: 0.5rem;
+        }
+
         h2 {
-            color: oklch(62.3% 0.214 259.815);
+            font-size: 1.8rem;
+            margin-top: 2rem;
+            margin-bottom: 1rem;
+        }
+
+        h3 {
+            font-size: 1.3rem;
+            margin-top: 1.5rem;
+            margin-bottom: 0.75rem;
+            color: #60a5fa;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .section {
+            background-color: #1a1a1a;
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 30px;
+            border: 1px solid #2a2a2a;
+        }
+
+        .endpoint {
+            background-color: #0d0d0d;
+            border-left: 4px solid #3b82f6;
+            padding: 15px;
+            margin: 15px 0;
+            border-radius: 8px;
+        }
+
+        .method {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 6px;
+            font-weight: bold;
+            font-size: 0.85rem;
+            margin-right: 10px;
+        }
+
+        .method-post {
+            background-color: #10b981;
+            color: white;
+        }
+
+        .method-get {
+            background-color: #3b82f6;
+            color: white;
+        }
+
+        .method-put {
+            background-color: #f59e0b;
+            color: white;
+        }
+
+        .method-delete {
+            background-color: #ef4444;
+            color: white;
+        }
+
+        .url {
+            font-family: 'Courier New', monospace;
+            font-size: 1rem;
+            color: #60a5fa;
         }
 
         pre {
-            background-color: oklch(26.9% 0 0);
-            padding: 10px;
-            border-radius: 5px;
+            background-color: #0d0d0d;
+            padding: 15px;
+            border-radius: 8px;
             overflow-x: auto;
+            margin: 10px 0;
+            border: 1px solid #2a2a2a;
         }
 
         code {
+            font-family: 'Courier New', monospace;
+            font-size: 0.9rem;
+            color: #e5e5e5;
+        }
+
+        .badge {
+            display: inline-block;
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-size: 0.75rem;
+            font-weight: bold;
+            margin-left: 10px;
+        }
+
+        .badge-public {
+            background-color: #6b7280;
             color: white;
         }
 
+        .badge-auth {
+            background-color: #8b5cf6;
+            color: white;
+        }
+
+        .badge-super {
+            background-color: #ef4444;
+            color: white;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 15px 0;
+        }
+
+        th, td {
+            padding: 10px;
+            text-align: left;
+            border-bottom: 1px solid #2a2a2a;
+        }
+
+        th {
+            background-color: #1a1a1a;
+            color: #3b82f6;
+            font-weight: bold;
+        }
+
+        td {
+            background-color: #0d0d0d;
+        }
+
         a {
-            color: #38bdf8;
+            color: #60a5fa;
             text-decoration: none;
         }
 
@@ -38,92 +170,668 @@
             text-decoration: underline;
         }
 
-        .container {
-            max-width: 800px;
-            margin: auto;
+        footer {
+            text-align: center;
+            padding: 30px 0 20px;
+            border-top: 1px solid #2a2a2a;
+            margin-top: 30px;
+            color: #6b7280;
         }
 
-        .section {
-            margin-bottom: 40px;
+        .nav {
+            position: sticky;
+            top: 0;
+            background-color: #0a0a0a;
+            padding: 10px 0;
+            margin-bottom: 20px;
+            border-bottom: 1px solid #2a2a2a;
+            z-index: 100;
+        }
+
+        .nav a {
+            margin-right: 20px;
+            font-size: 0.9rem;
+        }
+
+        .base-url {
+            background-color: #1a1a1a;
+            padding: 10px 15px;
+            border-radius: 8px;
+            font-family: monospace;
+            margin-bottom: 20px;
+        }
+
+        @media (max-width: 768px) {
+            body {
+                padding: 10px;
+            }
+            
+            h1 {
+                font-size: 1.8rem;
+            }
+            
+            h2 {
+                font-size: 1.4rem;
+            }
+            
+            .section {
+                padding: 15px;
+            }
+            
+            table {
+                font-size: 0.8rem;
+            }
+            
+            th, td {
+                padding: 8px;
+            }
         }
     </style>
 </head>
 
 <body>
     <div class="container">
-        <h1>API Chatbot Royal's Resto</h1>
-        <p>Selamat datang di API Chatbot Royal's Resto. API ini menyediakan endpoint untuk berinteraksi dengan chatbot
-            dan mengambil pertanyaan yang tidak dikenal.</p>
+        <div class="nav">
+            <a href="#chatbot">Chatbot</a>
+            <a href="#admin">Admin</a>
+            <a href="#dataset">Dataset</a>
+            <a href="#auth">Auth</a>
+            <a href="#info">Info</a>
+        </div>
 
-        <div class="section">
-            <h2># Endpoint Chat</h2>
-            <p><strong>URL:</strong> <code>/chat</code></p>
-            <p><strong>Method:</strong> POST</p>
-            <p><strong>Request JSON:</strong></p>
-            <pre>
-{
+        <h1>🤖 API Chatbot Royal's Resto</h1>
+        <p>Dokumentasi lengkap API untuk Chatbot Royal's Resto. Base URL: <code>http://localhost:5000</code></p>
+
+        <div class="base-url">
+            🔗 Base URL: <strong>http://localhost:5000</strong> (development) / <strong>https://api.royalsresto.com</strong> (production)
+        </div>
+
+        <!-- ==================== CHATBOT ENDPOINTS ==================== -->
+        <div id="chatbot">
+            <h2>💬 Chatbot Endpoints</h2>
+
+            <div class="section">
+                <h3>1. Kirim Pertanyaan ke Chatbot</h3>
+                <div class="endpoint">
+                    <span class="method method-post">POST</span>
+                    <span class="url">/chat</span>
+                    <span class="badge badge-public">Public</span>
+                </div>
+                <p><strong>Deskripsi:</strong> Mengirim pertanyaan ke chatbot dan mendapatkan jawaban.</p>
+                <p><strong>Request Body:</strong></p>
+                <pre>{
     "pertanyaan": "Apa menu favorit di Royal's Resto?"
-}
-            </pre>
-            <p><strong>Response JSON (jawaban normal):</strong></p>
-            <pre>
-{
+}</pre>
+                <p><strong>Response (Jawaban Normal - status ok):</strong></p>
+                <pre>{
     "pertanyaan": "Apa menu favorit di Royal's Resto?",
-    "jawaban": "Menu favorit kami adalah Nasi Goreng Royal.",
+    "jawaban": "Menu favorit kami adalah Kepiting Kenari dan Dendeng Rusa.",
     "status": "ok"
-}
-            </pre>
-            <p><strong>Response JSON (ambigu):</strong></p>
-            <pre>
-{
+}</pre>
+                <p><strong>Response (Pertanyaan Ambigu - status ambigu):</strong></p>
+                <pre>{
     "pertanyaan": "resto",
     "opsi_pertanyaan": [
         "Apa jam buka Royal's Resto?",
-        "Dimana lokasi Royal's Resto?"
+        "Dimana lokasi Royal's Resto?",
+        "Apa saja menu di Royal's Resto?"
     ],
     "jawaban": "Pertanyaan mana yang kamu maksud?",
     "status": "ambigu"
-}
-            </pre>
+}</pre>
+                <p><strong>Response (Pertanyaan Tidak Dikenal - status unknown):</strong></p>
+                <pre>{
+    "pertanyaan": "pertanyaan acak",
+    "jawaban": "Mohon maaf, saya belum mengerti pertanyaan Anda.",
+    "status": "unknown"
+}</pre>
+            </div>
         </div>
 
-        <div class="section">
-            <h2># Endpoint Pertanyaan Tidak Dikenal</h2>
-            <p><strong>URL:</strong> <code>/pertanyaan-unknown</code></p>
-            <p><strong>Method:</strong> GET</p>
-            <p><strong>Query Parameter:</strong></p>
-            <ul>
-                <li><code>page</code> (opsional, default=1) — nomor halaman untuk pagination</li>
-            </ul>
-            <p><strong>Contoh Request:</strong></p>
-            <pre>
-GET /pertanyaan-unknown?page=2
-            </pre>
-            <p><strong>Response JSON:</strong></p>
-            <pre>
-{
-    "page": 2,
+        <!-- ==================== AUTHENTICATION ENDPOINTS ==================== -->
+        <div id="auth">
+            <h2>🔐 Authentication Endpoints</h2>
+
+            <div class="section">
+                <h3>1. Login Admin</h3>
+                <div class="endpoint">
+                    <span class="method method-post">POST</span>
+                    <span class="url">/login</span>
+                    <span class="badge badge-public">Public</span>
+                </div>
+                <p><strong>Deskripsi:</strong> Login untuk mendapatkan token akses admin.</p>
+                <p><strong>Request Body:</strong></p>
+                <pre>{
+    "username": "admin",
+    "password": "admin123"
+}</pre>
+                <p><strong>Response (Sukses):</strong></p>
+                <pre>{
+    "message": "Login berhasil",
+    "authenticated": true,
+    "token": "eyJhbGciOiJIUzI1NiIs...",
+    "admin": {
+        "id": 1,
+        "username": "admin",
+        "email": "admin@royalsresto.com",
+        "full_name": "Administrator",
+        "role": "super_admin"
+    },
+    "expires_in": 86400
+}</pre>
+            </div>
+
+            <div class="section">
+                <h3>2. Logout Admin</h3>
+                <div class="endpoint">
+                    <span class="method method-post">POST</span>
+                    <span class="url">/logout</span>
+                    <span class="badge badge-auth">Auth Required</span>
+                </div>
+                <p><strong>Deskripsi:</strong> Logout dan menghapus session admin.</p>
+                <p><strong>Headers:</strong></p>
+                <pre>Authorization: Bearer &lt;token&gt;</pre>
+                <p><strong>Response:</strong></p>
+                <pre>{
+    "message": "Logout berhasil",
+    "authenticated": false
+}</pre>
+            </div>
+
+            <div class="section">
+                <h3>3. Verifikasi Token</h3>
+                <div class="endpoint">
+                    <span class="method method-get">GET</span>
+                    <span class="url">/verify-token</span>
+                    <span class="badge badge-public">Public</span>
+                </div>
+                <p><strong>Deskripsi:</strong> Memverifikasi apakah token masih valid.</p>
+                <p><strong>Headers:</strong></p>
+                <pre>Authorization: Bearer &lt;token&gt;</pre>
+                <p><strong>Response:</strong></p>
+                <pre>{
+    "authenticated": true,
+    "admin_id": 1,
+    "username": "admin",
+    "role": "super_admin"
+}</pre>
+            </div>
+
+            <div class="section">
+                <h3>4. Ganti Password Admin</h3>
+                <div class="endpoint">
+                    <span class="method method-post">POST</span>
+                    <span class="url">/change-password</span>
+                    <span class="badge badge-auth">Auth Required</span>
+                </div>
+                <p><strong>Deskripsi:</strong> Mengganti password admin yang sedang login.</p>
+                <p><strong>Headers:</strong></p>
+                <pre>Authorization: Bearer &lt;token&gt;</pre>
+                <p><strong>Request Body:</strong></p>
+                <pre>{
+    "old_password": "admin123",
+    "new_password": "newpassword123",
+    "confirm_password": "newpassword123"
+}</pre>
+                <p><strong>Response:</strong></p>
+                <pre>{
+    "message": "Password berhasil diubah"
+}</pre>
+            </div>
+
+            <div class="section">
+                <h3>5. Profil Admin</h3>
+                <div class="endpoint">
+                    <span class="method method-get">GET</span>
+                    <span class="url">/admin-profile</span>
+                    <span class="badge badge-auth">Auth Required</span>
+                </div>
+                <p><strong>Deskripsi:</strong> Mendapatkan profil admin yang sedang login.</p>
+                <p><strong>Headers:</strong></p>
+                <pre>Authorization: Bearer &lt;token&gt;</pre>
+                <p><strong>Response:</strong></p>
+                <pre>{
+    "admin": {
+        "id": 1,
+        "username": "admin",
+        "email": "admin@royalsresto.com",
+        "full_name": "Administrator",
+        "role": "super_admin",
+        "last_login": "2024-01-15 10:30:00",
+        "created_at": "2024-01-01 00:00:00"
+    }
+}</pre>
+            </div>
+        </div>
+
+        <!-- ==================== ADMIN MANAGEMENT ENDPOINTS ==================== -->
+        <div id="admin">
+            <h2>👥 Admin Management Endpoints (Super Admin Only)</h2>
+
+            <div class="section">
+                <h3>1. Daftar Semua Admin</h3>
+                <div class="endpoint">
+                    <span class="method method-get">GET</span>
+                    <span class="url">/api/admins</span>
+                    <span class="badge badge-super">Super Admin Only</span>
+                </div>
+                <p><strong>Deskripsi:</strong> Mendapatkan daftar semua admin (hanya super admin).</p>
+                <p><strong>Headers:</strong></p>
+                <pre>Authorization: Bearer &lt;token&gt;</pre>
+                <p><strong>Query Parameters:</strong></p>
+                <ul>
+                    <li><code>page</code> (optional) - Nomor halaman, default: 1</li>
+                    <li><code>per_page</code> (optional) - Jumlah per halaman, default: 10</li>
+                    <li><code>search</code> (optional) - Pencarian username/email/nama</li>
+                </ul>
+                <p><strong>Response:</strong></p>
+                <pre>{
+    "page": 1,
+    "per_page": 10,
+    "total_data": 5,
+    "total_pages": 1,
+    "data": [
+        {
+            "id": 1,
+            "username": "admin",
+            "email": "admin@royalsresto.com",
+            "full_name": "Administrator",
+            "role": "super_admin",
+            "is_active": true,
+            "last_login": "2024-01-15 10:30:00",
+            "created_at": "2024-01-01 00:00:00"
+        }
+    ]
+}</pre>
+            </div>
+
+            <div class="section">
+                <h3>2. Tambah Admin Baru</h3>
+                <div class="endpoint">
+                    <span class="method method-post">POST</span>
+                    <span class="url">/api/admins</span>
+                    <span class="badge badge-super">Super Admin Only</span>
+                </div>
+                <p><strong>Request Body:</strong></p>
+                <pre>{
+    "username": "admin_baru",
+    "password": "password123",
+    "email": "admin_baru@royalsresto.com",
+    "full_name": "Admin Baru",
+    "role": "admin",
+    "is_active": true
+}</pre>
+                <p><strong>Response:</strong></p>
+                <pre>{
+    "message": "Admin berhasil dibuat",
+    "admin_id": 2
+}</pre>
+            </div>
+
+            <div class="section">
+                <h3>3. Update Admin</h3>
+                <div class="endpoint">
+                    <span class="method method-put">PUT</span>
+                    <span class="url">/api/admins/{admin_id}</span>
+                    <span class="badge badge-super">Super Admin Only</span>
+                </div>
+                <p><strong>Request Body:</strong></p>
+                <pre>{
+    "email": "admin_update@royalsresto.com",
+    "full_name": "Admin Update",
+    "role": "admin",
+    "is_active": true
+}</pre>
+                <p><strong>Response:</strong></p>
+                <pre>{
+    "message": "Admin berhasil diupdate"
+}</pre>
+            </div>
+
+            <div class="section">
+                <h3>4. Reset Password Admin</h3>
+                <div class="endpoint">
+                    <span class="method method-post">POST</span>
+                    <span class="url">/api/admins/{admin_id}/reset-password</span>
+                    <span class="badge badge-super">Super Admin Only</span>
+                </div>
+                <p><strong>Request Body:</strong></p>
+                <pre>{
+    "new_password": "newpassword123"
+}</pre>
+                <p><strong>Response:</strong></p>
+                <pre>{
+    "message": "Password berhasil direset"
+}</pre>
+            </div>
+
+            <div class="section">
+                <h3>5. Hapus Admin</h3>
+                <div class="endpoint">
+                    <span class="method method-delete">DELETE</span>
+                    <span class="url">/api/admins/{admin_id}</span>
+                    <span class="badge badge-super">Super Admin Only</span>
+                </div>
+                <p><strong>Response:</strong></p>
+                <pre>{
+    "message": "Admin berhasil dihapus"
+}</pre>
+            </div>
+        </div>
+
+        <!-- ==================== DATASET MANAGEMENT ENDPOINTS ==================== -->
+        <div id="dataset">
+            <h2>📊 Dataset Management Endpoints</h2>
+
+            <div class="section">
+                <h3>1. Ambil Semua Data Dataset</h3>
+                <div class="endpoint">
+                    <span class="method method-get">GET</span>
+                    <span class="url">/get-all-data</span>
+                    <span class="badge badge-public">Public</span>
+                </div>
+                <p><strong>Query Parameters:</strong></p>
+                <ul>
+                    <li><code>page</code> - Nomor halaman, default: 1</li>
+                    <li><code>per_page</code> - Jumlah per halaman, default: 20</li>
+                    <li><code>search</code> - Pencarian pertanyaan</li>
+                    <li><code>kategori</code> - Filter berdasarkan kategori</li>
+                </ul>
+                <p><strong>Response:</strong></p>
+                <pre>{
+    "page": 1,
+    "per_page": 20,
+    "total_data": 150,
+    "total_pages": 8,
+    "categories": ["introduction", "menu", "harga", ...],
+    "data": [
+        {
+            "index": 0,
+            "pertanyaan": "hai",
+            "jawaban": "Hai kak, selamat datang...",
+            "kategori": "introduction"
+        }
+    ]
+}</pre>
+            </div>
+
+            <div class="section">
+                <h3>2. Tambah Data Baru</h3>
+                <div class="endpoint">
+                    <span class="method method-post">POST</span>
+                    <span class="url">/tambah-data</span>
+                    <span class="badge badge-public">Public</span>
+                </div>
+                <p><strong>Request Body:</strong></p>
+                <pre>{
+    "pertanyaan": "contoh pertanyaan baru",
+    "jawaban": "contoh jawaban untuk pertanyaan tersebut",
+    "kategori": "nama_kategori"
+}</pre>
+                <p><strong>Response:</strong></p>
+                <pre>{
+    "message": "Data berhasil ditambahkan ke CSV. Silakan latih model untuk mengupdate chatbot.",
+    "data": {
+        "pertanyaan": "contoh pertanyaan baru",
+        "jawaban": "contoh jawaban...",
+        "kategori": "nama_kategori"
+    },
+    "status": "success"
+}</pre>
+            </div>
+
+            <div class="section">
+                <h3>3. Update Data</h3>
+                <div class="endpoint">
+                    <span class="method method-put">PUT</span>
+                    <span class="url">/update-data</span>
+                    <span class="badge badge-public">Public</span>
+                </div>
+                <p><strong>Request Body:</strong></p>
+                <pre>{
+    "index": 0,
+    "pertanyaan": "pertanyaan yang diupdate",
+    "jawaban": "jawaban yang diupdate",
+    "kategori": "kategori_baru"
+}</pre>
+                <p><strong>Response:</strong></p>
+                <pre>{
+    "message": "Data berhasil diupdate",
+    "status": "success"
+}</pre>
+            </div>
+
+            <div class="section">
+                <h3>4. Hapus Data</h3>
+                <div class="endpoint">
+                    <span class="method method-delete">DELETE</span>
+                    <span class="url">/delete-data</span>
+                    <span class="badge badge-public">Public</span>
+                </div>
+                <p><strong>Request Body:</strong></p>
+                <pre>{
+    "index": 0
+}</pre>
+                <p><strong>Response:</strong></p>
+                <pre>{
+    "message": "Data berhasil dihapus",
+    "status": "success"
+}</pre>
+            </div>
+        </div>
+
+        <!-- ==================== UNKNOWN QUESTIONS ENDPOINTS ==================== -->
+        <div id="unknown">
+            <h2>❓ Unknown Questions Endpoints</h2>
+
+            <div class="section">
+                <h3>1. Daftar Pertanyaan Tidak Dikenal</h3>
+                <div class="endpoint">
+                    <span class="method method-get">GET</span>
+                    <span class="url">/pertanyaan-unknown</span>
+                    <span class="badge badge-public">Public</span>
+                </div>
+                <p><strong>Query Parameters:</strong></p>
+                <ul>
+                    <li><code>page</code> - Nomor halaman, default: 1</li>
+                    <li><code>per_page</code> - Jumlah per halaman, default: 10</li>
+                </ul>
+                <p><strong>Response:</strong></p>
+                <pre>{
+    "page": 1,
     "per_page": 10,
     "total_data": 35,
     "total_pages": 4,
     "data": [
-        { "id": 11, "pertanyaan": "Pertanyaan yang belum dipahami 11" },
-        { "id": 12, "pertanyaan": "Pertanyaan yang belum dipahami 12" }
+        {
+            "id": 1,
+            "pertanyaan": "Pertanyaan yang belum dipahami",
+            "created_at": "2024-01-15 10:30:00"
+        }
     ]
-}
-            </pre>
+}</pre>
+            </div>
+
+            <div class="section">
+                <h3>2. Hapus Pertanyaan Tidak Dikenal</h3>
+                <div class="endpoint">
+                    <span class="method method-delete">DELETE</span>
+                    <span class="url">/delete-unknown</span>
+                    <span class="badge badge-public">Public</span>
+                </div>
+                <p><strong>Request Body:</strong></p>
+                <pre>{
+    "id": 1
+}</pre>
+                <p><strong>Response:</strong></p>
+                <pre>{
+    "message": "Pertanyaan berhasil dihapus",
+    "status": "success"
+}</pre>
+            </div>
+
+            <div class="section">
+                <h3>3. Hapus Semua Pertanyaan Tidak Dikenal</h3>
+                <div class="endpoint">
+                    <span class="method method-delete">DELETE</span>
+                    <span class="url">/delete-all-unknown</span>
+                    <span class="badge badge-public">Public</span>
+                </div>
+                <p><strong>Response:</strong></p>
+                <pre>{
+    "message": "15 pertanyaan berhasil dihapus",
+    "status": "success",
+    "deleted_count": 15
+}</pre>
+            </div>
         </div>
 
+        <!-- ==================== MODEL TRAINING ENDPOINTS ==================== -->
+        <div id="training">
+            <h2>🤖 Model Training Endpoints</h2>
+
+            <div class="section">
+                <h3>1. Latih Model</h3>
+                <div class="endpoint">
+                    <span class="method method-post">POST</span>
+                    <span class="url">/train-model</span>
+                    <span class="badge badge-public">Public</span>
+                </div>
+                <p><strong>Deskripsi:</strong> Melatih ulang model chatbot dengan dataset terbaru.</p>
+                <p><strong>Response:</strong></p>
+                <pre>{
+    "message": "Model berhasil dilatih",
+    "training_time": "5.23 detik",
+    "total_data": 1250,
+    "total_questions": 1250,
+    "categories_count": 25,
+    "status": "success"
+}</pre>
+            </div>
+
+            <div class="section">
+                <h3>2. Informasi Model</h3>
+                <div class="endpoint">
+                    <span class="method method-get">GET</span>
+                    <span class="url">/model-info</span>
+                    <span class="badge badge-public">Public</span>
+                </div>
+                <p><strong>Response:</strong></p>
+                <pre>{
+    "total_questions": 1250,
+    "total_answers": 1250,
+    "categories": ["introduction", "menu", "harga", ...],
+    "model_loaded": true,
+    "vectorizer_loaded": true
+}</pre>
+            </div>
+
+            <div class="section">
+                <h3>3. Daftar Kategori</h3>
+                <div class="endpoint">
+                    <span class="method method-get">GET</span>
+                    <span class="url">/kategori</span>
+                    <span class="badge badge-public">Public</span>
+                </div>
+                <p><strong>Response:</strong></p>
+                <pre>{
+    "kategori": ["introduction", "menu", "harga", "promo", "fasilitas", ...]
+}</pre>
+            </div>
+        </div>
+
+        <!-- ==================== DEBUG ENDPOINTS ==================== -->
+        <div id="debug">
+            <h2>🐛 Debug Endpoints</h2>
+
+            <div class="section">
+                <h3>1. Cek CSV</h3>
+                <div class="endpoint">
+                    <span class="method method-get">GET</span>
+                    <span class="url">/cek-csv</span>
+                    <span class="badge badge-public">Public</span>
+                </div>
+                <p><strong>Response:</strong></p>
+                <pre>{
+    "total_lines": 1251,
+    "total_rows": 1251,
+    "last_5_rows": [...],
+    "file_path": "data/dataset.csv"
+}</pre>
+            </div>
+
+            <div class="section">
+                <h3>2. Perbaiki CSV</h3>
+                <div class="endpoint">
+                    <span class="method method-post">POST</span>
+                    <span class="url">/fix-csv</span>
+                    <span class="badge badge-public">Public</span>
+                </div>
+                <p><strong>Response:</strong></p>
+                <pre>{
+    "message": "CSV berhasil diperbaiki",
+    "backup_path": "data/dataset_backup.csv",
+    "total_rows": 1250
+}</pre>
+            </div>
+        </div>
+
+        <!-- ==================== RINGKASAN ENDPOINT ==================== -->
         <div class="section">
-            <h2># Informasi Tambahan</h2>
+            <h2>📋 Ringkasan Semua Endpoint</h2>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Method</th>
+                        <th>Endpoint</th>
+                        <th>Auth</th>
+                        <th>Deskripsi</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr><td>POST</td><td>/chat</td><td>Public</td><td>Kirim pertanyaan ke chatbot</td></tr>
+                    <tr><td>POST</td><td>/login</td><td>Public</td><td>Login admin</td></tr>
+                    <tr><td>POST</td><td>/logout</td><td>Auth</td><td>Logout admin</td></tr>
+                    <tr><td>GET</td><td>/verify-token</td><td>Public</td><td>Verifikasi token</td></tr>
+                    <tr><td>POST</td><td>/change-password</td><td>Auth</td><td>Ganti password admin</td></tr>
+                    <tr><td>GET</td><td>/admin-profile</td><td>Auth</td><td>Profil admin</td></tr>
+                    <tr><td>GET</td><td>/api/admins</td><td>Super Admin</td><td>Daftar semua admin</td></tr>
+                    <tr><td>POST</td><td>/api/admins</td><td>Super Admin</td><td>Tambah admin baru</td></tr>
+                    <tr><td>PUT</td><td>/api/admins/{id}</td><td>Super Admin</td><td>Update admin</td></tr>
+                    <tr><td>POST</td><td>/api/admins/{id}/reset-password</td><td>Super Admin</td><td>Reset password admin</td></tr>
+                    <tr><td>DELETE</td><td>/api/admins/{id}</td><td>Super Admin</td><td>Hapus admin</td></tr>
+                    <tr><td>GET</td><td>/get-all-data</td><td>Public</td><td>Ambil semua data dataset</td></tr>
+                    <tr><td>POST</td><td>/tambah-data</td><td>Public</td><td>Tambah data baru ke dataset</td></tr>
+                    <tr><td>PUT</td><td>/update-data</td><td>Public</td><td>Update data dataset</td></tr>
+                    <tr><td>DELETE</td><td>/delete-data</td><td>Public</td><td>Hapus data dataset</td></tr>
+                    <tr><td>GET</td><td>/pertanyaan-unknown</td><td>Public</td><td>Daftar pertanyaan tidak dikenal</td></tr>
+                    <tr><td>DELETE</td><td>/delete-unknown</td><td>Public</td><td>Hapus pertanyaan tidak dikenal</td></tr>
+                    <tr><td>DELETE</td><td>/delete-all-unknown</td><td>Public</td><td>Hapus semua pertanyaan tidak dikenal</td></tr>
+                    <tr><td>POST</td><td>/train-model</td><td>Public</td><td>Latih model chatbot</td></tr>
+                    <tr><td>GET</td><td>/model-info</td><td>Public</td><td>Informasi model</td></tr>
+                    <tr><td>GET</td><td>/kategori</td><td>Public</td><td>Daftar kategori</td></tr>
+                    <tr><td>GET</td><td>/cek-csv</td><td>Public</td><td>Cek isi CSV (debug)</td></tr>
+                    <tr><td>POST</td><td>/fix-csv</td><td>Public</td><td>Perbaiki CSV (debug)</td></tr>
+                </tbody>
+            </table>
+        </div>
+
+        <!-- ==================== INFORMASI TAMBAHAN ==================== -->
+        <div class="section">
+            <h2>ℹ️ Informasi Tambahan</h2>
             <ul>
-                <li>Pastikan Content-Type pada request POST adalah <code>application/json</code>.</li>
-                <li>Jika pertanyaan tidak dikenali oleh chatbot, pertanyaan akan otomatis disimpan di database.</li>
-                <li>Gunakan pagination untuk mengambil semua pertanyaan yang tidak dikenal.</li>
+                <li><strong>Authentication:</strong> Gunakan header <code>Authorization: Bearer &lt;token&gt;</code> untuk endpoint yang membutuhkan auth.</li>
+                <li><strong>Token Expired:</strong> Token akan kadaluarsa setelah <code>JWT_EXPIRATION_HOURS</code> (default 24 jam).</li>
+                <li><strong>Role:</strong> Super Admin memiliki akses penuh, Admin biasa hanya akses terbatas.</li>
+                <li><strong>Dataset:</strong> Data disimpan dalam file CSV di folder <code>data/dataset.csv</code>.</li>
+                <li><strong>Model:</strong> Model disimpan dalam file pickle di folder <code>model/model_qa.pkl</code>.</li>
+                <li><strong>Unknown Questions:</strong> Pertanyaan yang tidak dikenali otomatis disimpan ke database.</li>
+                <li><strong>Pagination:</strong> Gunakan parameter <code>page</code> dan <code>per_page</code> untuk mengatur pagination.</li>
             </ul>
         </div>
 
         <footer>
+            <p>© 2024 Royal's Resto Chatbot API | Developed with ❤️</p>
             <p>Prasasti M Fernanday &copy; 2025</p>
         </footer>
     </div>
