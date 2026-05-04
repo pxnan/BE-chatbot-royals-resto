@@ -119,6 +119,7 @@ def get_client_ip():
 # ===================== Database Connection =====================
 def get_db_connection():
     if not DATABASE_URL:
+        logger.error("DATABASE_URL not set")
         return None
     try:
         import psycopg2
@@ -136,7 +137,7 @@ def get_db_cursor(conn, dictionary=True):
         return conn.cursor(cursor_factory=RealDictCursor)
     return conn.cursor()
 
-# ===================== Lazy loading untuk model dan dataset =====================
+# ===================== Lazy loading untuk model =====================
 model_qa = None
 vectorizer_qa = None
 answers = []
@@ -149,8 +150,8 @@ def load_models_and_data():
     if _models_loaded:
         return
     _models_loaded = True
-    
-    # Load model jika ada
+
+    # Load model if exists
     model_path = os.path.join(os.getenv("MODEL_BASE_PATH", "model/"), 'model_qa.pkl')
     try:
         if os.path.exists(model_path):
@@ -168,15 +169,15 @@ def load_models_and_data():
     except Exception as e:
         logger.error(f"Error loading model: {e}")
 
-    # Load dataset dari database (tabel dataset)
+    # Load dataset from database (not from CSV anymore)
     load_dataset_from_db()
 
 def load_dataset_from_db():
-    """Load dataset dari tabel database (bukan CSV)"""
+    """Load dataset dari tabel database"""
     global pertanyaan_list, answers, kategori_list
     conn = get_db_connection()
     if conn is None:
-        logger.warning("Database not available, cannot load dataset")
+        logger.error("Database not available, cannot load dataset")
         return
     try:
         cursor = get_db_cursor(conn, dictionary=True)
@@ -190,71 +191,6 @@ def load_dataset_from_db():
         conn.close()
     except Exception as e:
         logger.error(f"Error loading dataset from DB: {e}")
-
-def save_dataset_to_db(q_list, a_list, k_list):
-    """Simpan dataset ke database (replace semua data)"""
-    conn = get_db_connection()
-    if conn is None:
-        logger.error("Database not available, cannot save dataset")
-        return False
-    try:
-        cursor = conn.cursor()
-        # Truncate dan insert ulang (lebih sederhana)
-        cursor.execute("TRUNCATE TABLE dataset RESTART IDENTITY")
-        for q, a, k in zip(q_list, a_list, k_list):
-            cursor.execute("INSERT INTO dataset (pertanyaan, jawaban, kategori) VALUES (%s, %s, %s)", (q, a, k))
-        conn.commit()
-        cursor.close()
-        conn.close()
-        # Update global lists
-        global pertanyaan_list, answers, kategori_list
-        pertanyaan_list = q_list
-        answers = a_list
-        kategori_list = k_list
-        return True
-    except Exception as e:
-        logger.error(f"Error saving dataset to DB: {e}")
-        if conn:
-            conn.rollback()
-        return False
-
-def load_dataset_from_csv(file_path):
-    """Backup: load dari CSV jika database tidak tersedia (tetap dipertahankan untuk kompatibilitas)"""
-    q = []
-    a = []
-    k = []
-    try:
-        with open(file_path, 'r', encoding='utf-8') as f:
-            reader = csv.reader(f)
-            next(reader, None)
-            for row in reader:
-                if len(row) >= 3:
-                    q.append(row[0].strip())
-                    a.append(row[1].strip())
-                    k.append(row[2].strip())
-                elif len(row) == 2:
-                    q.append(row[0].strip())
-                    a.append(row[1].strip())
-                    k.append('umum')
-                elif len(row) == 1:
-                    q.append(row[0].strip())
-                    a.append('')
-                    k.append('umum')
-    except FileNotFoundError:
-        os.makedirs(os.path.dirname(file_path), exist_ok=True)
-        with open(file_path, 'w', encoding='utf-8', newline='') as f:
-            writer = csv.writer(f)
-            writer.writerow(['pertanyaan', 'jawaban', 'kategori'])
-    return q, a, k
-
-def save_dataset_to_csv(file_path, q_list, a_list, k_list):
-    """Backup: simpan ke CSV (tetap dipertahankan)"""
-    os.makedirs(os.path.dirname(file_path), exist_ok=True)
-    with open(file_path, 'w', encoding='utf-8', newline='') as f:
-        writer = csv.writer(f, quoting=csv.QUOTE_ALL)
-        writer.writerow(['pertanyaan', 'jawaban', 'kategori'])
-        for i in range(len(q_list)):
-            writer.writerow([q_list[i], a_list[i] if i < len(a_list) else '', k_list[i] if i < len(k_list) else 'umum'])
 
 def save_unknown_question(question):
     conn = get_db_connection()
@@ -286,7 +222,6 @@ def chat():
     if not user_input:
         return jsonify({'error': 'Pertanyaan kosong'}), 400
 
-    # Lazy load model jika diperlukan
     load_models_and_data()
 
     if model_qa is None or vectorizer_qa is None:
@@ -297,7 +232,6 @@ def chat():
             'status': 'error'
         })
 
-    # Proses dengan model (perlu import di sini agar tidak global)
     from preprocessing import preprocess
     import numpy as np
     processed_input = preprocess(user_input)
@@ -776,7 +710,7 @@ def model_info():
         'vectorizer_loaded': vectorizer_qa is not None
     })
 
-# ==================== DATASET MANAGEMENT (menggunakan database) ====================
+# ==================== DATASET MANAGEMENT (Hanya Database) ====================
 @app.route('/get-all-data', methods=['GET', 'OPTIONS'])
 def get_all_data():
     if request.method == 'OPTIONS':
@@ -789,30 +723,7 @@ def get_all_data():
 
     conn = get_db_connection()
     if conn is None:
-        # Fallback ke CSV jika database tidak tersedia
-        q_list, a_list, k_list = load_dataset_from_csv(csv_path)
-        filtered = []
-        for i in range(len(q_list)):
-            p = q_list[i]
-            j = a_list[i] if i < len(a_list) else ''
-            k = k_list[i] if i < len(k_list) else 'umum'
-            if search and search.lower() not in p.lower():
-                continue
-            if kategori_filter and k != kategori_filter:
-                continue
-            filtered.append({'index': i, 'pertanyaan': p, 'jawaban': j, 'kategori': k})
-        total = len(filtered)
-        total_pages = (total + per_page - 1) // per_page if total > 0 else 1
-        data_page = filtered[offset:offset + per_page]
-        categories = sorted(list(set(k_list)))
-        return jsonify({
-            'page': page,
-            'per_page': per_page,
-            'total_data': total,
-            'total_pages': total_pages,
-            'data': data_page,
-            'categories': categories
-        }), 200
+        return jsonify({'error': 'Database tidak tersedia'}), 500
 
     cursor = get_db_cursor(conn, dictionary=True)
     base_query = "SELECT id, pertanyaan, jawaban, kategori FROM dataset WHERE 1=1"
@@ -834,7 +745,8 @@ def get_all_data():
     data = []
     for row in rows:
         data.append({
-            'index': row['id'] - 1,  # id dimulai dari 1, index untuk frontend (0-based)
+            'index': row['id'] - 1,
+            'id': row['id'],
             'pertanyaan': row['pertanyaan'],
             'jawaban': row['jawaban'],
             'kategori': row['kategori']
@@ -847,7 +759,7 @@ def get_all_data():
         'total_data': total,
         'total_pages': total_pages,
         'data': data,
-        'categories': []  # Bisa diambil terpisah
+        'categories': []  # jika butuh kategori terpisah, bisa dibuat endpoint lain
     }), 200
 
 @app.route('/tambah-data', methods=['POST', 'OPTIONS'])
@@ -863,20 +775,7 @@ def tambah_data():
 
     conn = get_db_connection()
     if conn is None:
-        # Fallback ke CSV
-        q_list, a_list, k_list = load_dataset_from_csv(csv_path)
-        if pertanyaan.lower() in [p.lower() for p in q_list]:
-            return jsonify({'error': f'Pertanyaan "{pertanyaan}" sudah ada', 'status': 'duplicate'}), 409
-        q_list.append(pertanyaan)
-        a_list.append(jawaban)
-        k_list.append(kategori)
-        save_dataset_to_csv(csv_path, q_list, a_list, k_list)
-        load_models_and_data()  # Reload
-        return jsonify({
-            'message': 'Data berhasil ditambahkan (CSV)',
-            'data': {'pertanyaan': pertanyaan, 'jawaban': jawaban, 'kategori': kategori},
-            'status': 'success'
-        }), 201
+        return jsonify({'error': 'Database tidak tersedia'}), 500
 
     cursor = conn.cursor()
     # Cek duplikat
@@ -889,10 +788,9 @@ def tambah_data():
     conn.commit()
     cursor.close()
     conn.close()
-    # Reload data ke memory
-    load_dataset_from_db()
+    load_dataset_from_db()  # refresh memory
     return jsonify({
-        'message': 'Data berhasil ditambahkan ke database',
+        'message': 'Data berhasil ditambahkan',
         'data': {'pertanyaan': pertanyaan, 'jawaban': jawaban, 'kategori': kategori},
         'status': 'success'
     }), 201
@@ -911,22 +809,10 @@ def update_data():
 
     conn = get_db_connection()
     if conn is None:
-        # Fallback CSV
-        q_list, a_list, k_list = load_dataset_from_csv(csv_path)
-        if index < 0 or index >= len(q_list):
-            return jsonify({'error': 'Index tidak valid'}), 400
-        q_list[index] = pertanyaan
-        a_list[index] = jawaban
-        k_list[index] = kategori
-        save_dataset_to_csv(csv_path, q_list, a_list, k_list)
-        load_models_and_data()
-        return jsonify({'message': 'Data berhasil diupdate (CSV)', 'status': 'success'}), 200
+        return jsonify({'error': 'Database tidak tersedia'}), 500
 
-    # Konversi index (frontend menggunakan 0-based, database id dimulai 1)
-    # Kita perlu mencari id berdasarkan urutan? Lebih aman menggunakan id dari database.
-    # Karena frontend mengirim index berdasarkan urutan hasil get-all-data, kita perlu mapping.
-    # Alternatif: gunakan id dari database langsung. Namun untuk kompatibilitas, kita ambil id dari urutan.
     cursor = get_db_cursor(conn, dictionary=True)
+    # Dapatkan id berdasarkan urutan (index)
     cursor.execute("SELECT id FROM dataset ORDER BY id")
     ids = [row['id'] for row in cursor.fetchall()]
     if index < 0 or index >= len(ids):
@@ -953,16 +839,7 @@ def delete_data():
 
     conn = get_db_connection()
     if conn is None:
-        # Fallback CSV
-        q_list, a_list, k_list = load_dataset_from_csv(csv_path)
-        if index < 0 or index >= len(q_list):
-            return jsonify({'error': 'Index tidak valid'}), 400
-        del q_list[index]
-        del a_list[index]
-        del k_list[index]
-        save_dataset_to_csv(csv_path, q_list, a_list, k_list)
-        load_models_and_data()
-        return jsonify({'message': 'Data berhasil dihapus (CSV)', 'status': 'success'}), 200
+        return jsonify({'error': 'Database tidak tersedia'}), 500
 
     cursor = get_db_cursor(conn, dictionary=True)
     cursor.execute("SELECT id FROM dataset ORDER BY id")
@@ -978,6 +855,37 @@ def delete_data():
     conn.close()
     load_dataset_from_db()
     return jsonify({'message': 'Data berhasil dihapus', 'status': 'success'}), 200
+
+@app.route('/delete-bulk-data', methods=['DELETE', 'OPTIONS'])
+def delete_bulk_data():
+    if request.method == 'OPTIONS':
+        return '', 200
+    data = request.json or {}
+    indices = data.get('indices', [])
+    if not indices:
+        return jsonify({'error': 'Tidak ada index yang dipilih'}), 400
+
+    conn = get_db_connection()
+    if conn is None:
+        return jsonify({'error': 'Database tidak tersedia'}), 500
+
+    cursor = get_db_cursor(conn, dictionary=True)
+    cursor.execute("SELECT id FROM dataset ORDER BY id")
+    ids = [row['id'] for row in cursor.fetchall()]
+    to_delete = []
+    for idx in indices:
+        if 0 <= idx < len(ids):
+            to_delete.append(ids[idx])
+    if not to_delete:
+        cursor.close()
+        conn.close()
+        return jsonify({'error': 'Tidak ada data valid'}), 400
+    cursor.execute("DELETE FROM dataset WHERE id = ANY(%s)", (to_delete,))
+    conn.commit()
+    cursor.close()
+    conn.close()
+    load_dataset_from_db()
+    return jsonify({'message': f'{len(to_delete)} data berhasil dihapus', 'status': 'success'}), 200
 
 # ==================== TRAINING MODEL ====================
 @app.route('/train-model', methods=['POST', 'OPTIONS'])
@@ -995,23 +903,22 @@ def train_model():
         return jsonify({'error': 'Library tidak tersedia di server ini. Training tidak dapat dilakukan.'}), 500
 
     start_time = time.time()
-    # Ambil data dari database
     conn = get_db_connection()
     if conn is None:
-        # Fallback CSV
-        q_list, a_list, k_list = load_dataset_from_csv(csv_path)
-    else:
-        cursor = get_db_cursor(conn, dictionary=True)
-        cursor.execute("SELECT pertanyaan, jawaban, kategori FROM dataset ORDER BY id")
-        rows = cursor.fetchall()
-        q_list = [row['pertanyaan'] for row in rows]
-        a_list = [row['jawaban'] for row in rows]
-        k_list = [row['kategori'] for row in rows]
-        cursor.close()
-        conn.close()
+        return jsonify({'error': 'Database tidak tersedia'}), 500
 
-    if len(q_list) == 0:
+    cursor = get_db_cursor(conn, dictionary=True)
+    cursor.execute("SELECT pertanyaan, jawaban, kategori FROM dataset ORDER BY id")
+    rows = cursor.fetchall()
+    cursor.close()
+    conn.close()
+
+    if len(rows) == 0:
         return jsonify({'error': 'Dataset kosong'}), 400
+
+    q_list = [row['pertanyaan'] for row in rows]
+    a_list = [row['jawaban'] for row in rows]
+    k_list = [row['kategori'] for row in rows]
 
     processed = [preprocess(q) for q in q_list]
     vectorizer = TfidfVectorizer()
@@ -1031,7 +938,6 @@ def train_model():
             'categories': k_list
         }, f)
 
-    # Update global variables
     global _models_loaded
     _models_loaded = False
     load_models_and_data()
@@ -1045,7 +951,9 @@ def train_model():
         'status': 'success'
     }), 200
 
-# ==================== DEBUG ====================
+# ==================== DEBUG (CSV masih dipertahankan untuk keperluan debugging) ====================
+csv_path = os.getenv("DATA_PATH", "data/dataset.csv")
+
 @app.route('/cek-csv', methods=['GET', 'OPTIONS'])
 def cek_csv():
     if request.method == 'OPTIONS':
@@ -1068,9 +976,23 @@ def fix_csv():
     if request.method == 'OPTIONS':
         return '', 200
     try:
-        q, a, k = load_dataset_from_csv(csv_path)
-        save_dataset_to_csv(csv_path, q, a, k)
-        return jsonify({'message': 'CSV berhasil diperbaiki', 'total_rows': len(q)})
+        # Baca data dari database, lalu ekspor ke CSV untuk memperbaiki file
+        conn = get_db_connection()
+        if conn is None:
+            return jsonify({'error': 'Database tidak tersedia'}), 500
+        cursor = get_db_cursor(conn, dictionary=True)
+        cursor.execute("SELECT pertanyaan, jawaban, kategori FROM dataset ORDER BY id")
+        rows = cursor.fetchall()
+        cursor.close()
+        conn.close()
+        # Tulis ke CSV
+        os.makedirs(os.path.dirname(csv_path), exist_ok=True)
+        with open(csv_path, 'w', encoding='utf-8', newline='') as f:
+            writer = csv.writer(f, quoting=csv.QUOTE_ALL)
+            writer.writerow(['pertanyaan', 'jawaban', 'kategori'])
+            for row in rows:
+                writer.writerow([row['pertanyaan'], row['jawaban'], row['kategori']])
+        return jsonify({'message': 'CSV berhasil diperbaiki dari database', 'total_rows': len(rows)})
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
@@ -1081,15 +1003,7 @@ def get_data_by_index(index):
         return '', 200
     conn = get_db_connection()
     if conn is None:
-        q, a, k = load_dataset_from_csv(csv_path)
-        if index < 0 or index >= len(q):
-            return jsonify({'error': 'Index tidak valid'}), 400
-        return jsonify({
-            'index': index,
-            'pertanyaan': q[index],
-            'jawaban': a[index],
-            'kategori': k[index] if index < len(k) else 'umum'
-        }), 200
+        return jsonify({'error': 'Database tidak tersedia'}), 500
     cursor = get_db_cursor(conn, dictionary=True)
     cursor.execute("SELECT id, pertanyaan, jawaban, kategori FROM dataset ORDER BY id")
     rows = cursor.fetchall()
@@ -1100,49 +1014,11 @@ def get_data_by_index(index):
     row = rows[index]
     return jsonify({
         'index': index,
+        'id': row['id'],
         'pertanyaan': row['pertanyaan'],
         'jawaban': row['jawaban'],
         'kategori': row['kategori']
     }), 200
-
-@app.route('/delete-bulk-data', methods=['DELETE', 'OPTIONS'])
-def delete_bulk_data():
-    if request.method == 'OPTIONS':
-        return '', 200
-    data = request.json or {}
-    indices = data.get('indices', [])
-    if not indices:
-        return jsonify({'error': 'Tidak ada index yang dipilih'}), 400
-
-    conn = get_db_connection()
-    if conn is None:
-        q, a, k = load_dataset_from_csv(csv_path)
-        for idx in sorted(indices, reverse=True):
-            if 0 <= idx < len(q):
-                del q[idx]
-                del a[idx]
-                del k[idx]
-        save_dataset_to_csv(csv_path, q, a, k)
-        load_models_and_data()
-        return jsonify({'message': f'{len(indices)} data berhasil dihapus (CSV)', 'status': 'success'}), 200
-
-    cursor = get_db_cursor(conn, dictionary=True)
-    cursor.execute("SELECT id FROM dataset ORDER BY id")
-    ids = [row['id'] for row in cursor.fetchall()]
-    to_delete = []
-    for idx in indices:
-        if 0 <= idx < len(ids):
-            to_delete.append(ids[idx])
-    if not to_delete:
-        cursor.close()
-        conn.close()
-        return jsonify({'error': 'Tidak ada data valid'}), 400
-    cursor.execute("DELETE FROM dataset WHERE id = ANY(%s)", (to_delete,))
-    conn.commit()
-    cursor.close()
-    conn.close()
-    load_dataset_from_db()
-    return jsonify({'message': f'{len(to_delete)} data berhasil dihapus', 'status': 'success'}), 200
 
 @app.route('/api/register', methods=['POST', 'OPTIONS'])
 def register_admin():
@@ -1190,8 +1066,6 @@ def get_dashboard_stats():
     conn = get_db_connection()
     total_admin = 0
     total_unknown = 0
-    total_questions = len(pertanyaan_list)
-    total_categories = len(set(kategori_list)) if kategori_list else 0
     if conn:
         cursor = get_db_cursor(conn, dictionary=True)
         cursor.execute("SELECT COUNT(*) as total FROM admin")
@@ -1203,8 +1077,8 @@ def get_dashboard_stats():
     return jsonify({
         'total_admin': total_admin,
         'total_unknown_questions': total_unknown,
-        'total_questions': total_questions,
-        'total_categories': total_categories,
+        'total_questions': len(pertanyaan_list),
+        'total_categories': len(set(kategori_list)) if kategori_list else 0,
         'model_loaded': model_qa is not None
     }), 200
 
@@ -1214,13 +1088,7 @@ def export_data():
         return '', 200
     conn = get_db_connection()
     if conn is None:
-        try:
-            with open(csv_path, 'r', encoding='utf-8') as f:
-                content = f.read()
-            from flask import Response
-            return Response(content, mimetype='text/csv', headers={'Content-Disposition': 'attachment;filename=dataset_export.csv'}), 200
-        except Exception as e:
-            return jsonify({'error': str(e)}), 500
+        return jsonify({'error': 'Database tidak tersedia'}), 500
     cursor = get_db_cursor(conn, dictionary=True)
     cursor.execute("SELECT pertanyaan, jawaban, kategori FROM dataset ORDER BY id")
     rows = cursor.fetchall()
@@ -1246,14 +1114,7 @@ def search_data():
 
     conn = get_db_connection()
     if conn is None:
-        q_list, a_list, k_list = load_dataset_from_csv(csv_path)
-        results = []
-        for i, (p, j, k) in enumerate(zip(q_list, a_list, k_list)):
-            if query.lower() in p.lower():
-                if kategori and k != kategori:
-                    continue
-                results.append({'index': i, 'pertanyaan': p, 'jawaban': j, 'kategori': k})
-        return jsonify({'data': results[:50], 'total': len(results)}), 200
+        return jsonify({'error': 'Database tidak tersedia'}), 500
 
     cursor = get_db_cursor(conn, dictionary=True)
     base_sql = "SELECT id, pertanyaan, jawaban, kategori FROM dataset WHERE pertanyaan ILIKE %s"
@@ -1268,6 +1129,7 @@ def search_data():
     for row in rows:
         results.append({
             'index': row['id'] - 1,
+            'id': row['id'],
             'pertanyaan': row['pertanyaan'],
             'jawaban': row['jawaban'],
             'kategori': row['kategori']
