@@ -255,6 +255,38 @@ def save_unknown_question(question):
             conn.close()
         except Exception as e:
             logger.error(f"Save unknown error: {e}")
+            
+def is_vercel():
+    return os.getenv('VERCEL') == '1' or os.getenv('FLASK_ENV') == 'production'
+
+def save_question_to_db(pertanyaan, jawaban, kategori):
+    conn = get_db_connection()
+    if not conn:
+        return False
+    try:
+        cursor = conn.cursor()
+        cursor.execute(
+            "INSERT INTO dataset (pertanyaan, jawaban, kategori) VALUES (%s, %s, %s)",
+            (pertanyaan, jawaban, kategori)
+        )
+        conn.commit()
+        cursor.close()
+        conn.close()
+        return True
+    except Exception as e:
+        logger.error(f"Insert DB error: {e}")
+        return False
+
+def question_exists_in_db(pertanyaan):
+    conn = get_db_connection()
+    if not conn:
+        return False
+    cursor = conn.cursor()
+    cursor.execute("SELECT id FROM dataset WHERE pertanyaan = %s", (pertanyaan,))
+    exists = cursor.fetchone() is not None
+    cursor.close()
+    conn.close()
+    return exists
 
 # ==================== ENDPOINTS =====================
 @app.route('/')
@@ -800,30 +832,52 @@ def get_all_data():
     }), 200
 
 @app.route('/tambah-data', methods=['POST', 'OPTIONS'])
+@api_key_required
 def tambah_data():
     if request.method == 'OPTIONS':
         return '', 200
-    data = request.json or {}
-    pertanyaan = data.get('pertanyaan', '').strip()
-    jawaban = data.get('jawaban', '').strip()
-    kategori = data.get('kategori', '').strip()
-    if not pertanyaan or not jawaban or not kategori:
-        return jsonify({'error': 'Semua field harus diisi'}), 400
+    try:
+        data = request.json
+        pertanyaan_baru = data.get('pertanyaan', '').strip()
+        jawaban_baru = data.get('jawaban', '').strip()
+        kategori_baru = data.get('kategori', '').strip()
+        if not pertanyaan_baru or not jawaban_baru or not kategori_baru:
+            return jsonify({'error': 'Semua field harus diisi'}), 400
 
-    q_list, a_list, k_list = load_dataset_from_csv(csv_path)
-    if pertanyaan.lower() in [p.lower() for p in q_list]:
-        return jsonify({'error': f'Pertanyaan "{pertanyaan}" sudah ada', 'status': 'duplicate'}), 409
-    q_list.append(pertanyaan)
-    a_list.append(jawaban)
-    k_list.append(kategori)
-    save_dataset_to_csv(csv_path, q_list, a_list, k_list)
-    return jsonify({
-        'message': 'Data berhasil ditambahkan',
-        'data': {'pertanyaan': pertanyaan, 'jawaban': jawaban, 'kategori': kategori},
-        'status': 'success'
-    }), 201
+        # Cek duplikat
+        if question_exists_in_db(pertanyaan_baru):
+            return jsonify({'error': f'Pertanyaan "{pertanyaan_baru}" sudah ada', 'status': 'duplicate'}), 409
+
+        # Simpan ke database (karena Vercel tidak bisa write file CSV)
+        if is_vercel():
+            if save_question_to_db(pertanyaan_baru, jawaban_baru, kategori_baru):
+                return jsonify({
+                    'message': 'Data berhasil ditambahkan ke database',
+                    'data': {'pertanyaan': pertanyaan_baru, 'jawaban': jawaban_baru, 'kategori': kategori_baru},
+                    'status': 'success'
+                }), 201
+            else:
+                return jsonify({'error': 'Gagal menyimpan ke database'}), 500
+        else:
+            # Untuk development lokal, tetap gunakan CSV
+            pertanyaan_temp, jawaban_temp, kategori_temp = load_dataset_from_csv(csv_path)
+            if pertanyaan_baru.lower() in [p.lower() for p in pertanyaan_temp]:
+                return jsonify({'error': f'Pertanyaan "{pertanyaan_baru}" sudah ada', 'status': 'duplicate'}), 409
+            pertanyaan_temp.append(pertanyaan_baru)
+            jawaban_temp.append(jawaban_baru)
+            kategori_temp.append(kategori_baru)
+            save_dataset_to_csv(csv_path, pertanyaan_temp, jawaban_temp, kategori_temp)
+            return jsonify({
+                'message': 'Data berhasil ditambahkan ke CSV',
+                'data': {'pertanyaan': pertanyaan_baru, 'jawaban': jawaban_baru, 'kategori': kategori_baru},
+                'status': 'success'
+            }), 201
+    except Exception as e:
+        logger.error(f"Error in tambah_data: {e}")
+        return jsonify({'error': str(e)}), 500
 
 @app.route('/update-data', methods=['PUT', 'OPTIONS'])
+@api_key_required
 def update_data():
     if request.method == 'OPTIONS':
         return '', 200
