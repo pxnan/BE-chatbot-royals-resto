@@ -124,13 +124,15 @@ def get_db_connection():
     try:
         import psycopg2
         from psycopg2.extras import RealDictCursor
-        # Tambahkan sslmode jika belum ada
-        if "sslmode" not in DATABASE_URL and "?" in DATABASE_URL:
-            DATABASE_URL += "&sslmode=require"
-        elif "sslmode" not in DATABASE_URL:
-            DATABASE_URL += "?sslmode=require"
-        conn = psycopg2.connect(DATABASE_URL)
-        # Test koneksi
+        # Pastikan URL memiliki sslmode=require (diperlukan untuk Neon)
+        url = DATABASE_URL
+        if "sslmode" not in url:
+            if "?" in url:
+                url += "&sslmode=require"
+            else:
+                url += "?sslmode=require"
+        conn = psycopg2.connect(url)
+        # Tes koneksi
         conn.cursor().close()
         logger.info("Database connection successful")
         return conn
