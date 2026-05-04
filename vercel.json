@@ -1,10 +1,11 @@
 {
-    "functions": {
-        "app.py": {
-            "runtime": "python3.9",
-            "maxDuration": 10
+    "version": 2,
+    "builds": [
+        {
+            "src": "app.py",
+            "use": "@vercel/python"
         }
-    },
+    ],
     "routes": [
         {
             "src": "/(.*)",
@@ -14,21 +15,12 @@
                 "POST",
                 "PUT",
                 "DELETE",
-                "OPTIONS",
-                "PATCH"
-            ],
-            "headers": {
-                "Access-Control-Allow-Origin": "*",
-                "Access-Control-Allow-Credentials": "true",
-                "Access-Control-Allow-Headers": "X-API-Key, Authorization, Content-Type, Accept, X-Requested-With",
-                "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS, PATCH"
-            }
+                "OPTIONS"
+            ]
         }
     ],
-    "builds": [
-        {
-            "src": "app.py",
-            "use": "@vercel/python"
-        }
-    ]
+    "env": {
+        "FLASK_ENV": "production",
+        "FLASK_DEBUG": "False"
+    }
 }
