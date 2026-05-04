@@ -750,18 +750,26 @@ def get_unknown_questions():
     page = request.args.get('page', 1, type=int)
     per_page = 10
     offset = (page - 1) * per_page
+
     conn = get_db_connection()
     if conn is None:
-        return jsonify({'data': [], 'total_data': 0, 'page': page, 'per_page': per_page, 'total_pages': 1}), 200
-    cursor = get_db_cursor(conn, dictionary=True)
-    cursor.execute("SELECT * FROM pertanyaan_unknow ORDER BY id DESC LIMIT %s OFFSET %s", (per_page, offset))
-    data = cursor.fetchall()
-    cursor.execute("SELECT COUNT(*) as total FROM pertanyaan_unknow")
-    total = cursor.fetchone()['total']
-    cursor.close()
-    conn.close()
-    total_pages = (total + per_page - 1) // per_page
-    return jsonify({'page': page, 'per_page': per_page, 'total_data': total, 'total_pages': total_pages, 'data': data}), 200
+        return jsonify({'error': 'Database tidak tersedia'}), 500
+
+    try:
+        cursor = get_db_cursor(conn, dictionary=True)
+        cursor.execute("SELECT * FROM pertanyaan_unknow ORDER BY id DESC LIMIT %s OFFSET %s", (per_page, offset))
+        data = cursor.fetchall()
+        cursor.execute("SELECT COUNT(*) as total FROM pertanyaan_unknow")
+        total = cursor.fetchone()['total']
+        cursor.close()
+        conn.close()
+        total_pages = (total + per_page - 1) // per_page
+        return jsonify({'page': page, 'per_page': per_page, 'total_data': total, 'total_pages': total_pages, 'data': data}), 200
+    except Exception as e:
+        logger.error(f"Error in get_unknown_questions: {e}")
+        if conn:
+            conn.close()
+        return jsonify({'error': 'Gagal mengambil data'}), 500
 
 @app.route('/delete-unknown', methods=['DELETE', 'OPTIONS'])
 def delete_unknown():
@@ -771,33 +779,51 @@ def delete_unknown():
     unknown_id = data.get('id')
     if not unknown_id:
         return jsonify({'error': 'ID tidak ditemukan'}), 400
+
     conn = get_db_connection()
     if conn is None:
-        return jsonify({'message': 'Pertanyaan berhasil dihapus (demo)'}), 200
-    cursor = conn.cursor()
-    cursor.execute("DELETE FROM pertanyaan_unknow WHERE id = %s", (unknown_id,))
-    conn.commit()
-    affected = cursor.rowcount
-    cursor.close()
-    conn.close()
-    if affected == 0:
-        return jsonify({'error': 'Data tidak ditemukan'}), 404
-    return jsonify({'message': 'Pertanyaan berhasil dihapus', 'status': 'success'}), 200
+        return jsonify({'error': 'Database tidak tersedia'}), 500
+
+    try:
+        cursor = conn.cursor()
+        cursor.execute("DELETE FROM pertanyaan_unknow WHERE id = %s", (unknown_id,))
+        conn.commit()
+        affected = cursor.rowcount
+        cursor.close()
+        conn.close()
+        if affected == 0:
+            return jsonify({'error': 'Data tidak ditemukan'}), 404
+        return jsonify({'message': 'Pertanyaan berhasil dihapus', 'status': 'success'}), 200
+    except Exception as e:
+        logger.error(f"Error deleting unknown: {e}")
+        if conn:
+            conn.rollback()
+            conn.close()
+        return jsonify({'error': 'Gagal menghapus data'}), 500
 
 @app.route('/delete-all-unknown', methods=['DELETE', 'OPTIONS'])
 def delete_all_unknown():
     if request.method == 'OPTIONS':
         return '', 200
+
     conn = get_db_connection()
     if conn is None:
-        return jsonify({'message': 'Semua pertanyaan berhasil dihapus (demo)', 'deleted_count': 0}), 200
-    cursor = conn.cursor()
-    cursor.execute("DELETE FROM pertanyaan_unknow")
-    conn.commit()
-    affected = cursor.rowcount
-    cursor.close()
-    conn.close()
-    return jsonify({'message': f'{affected} pertanyaan berhasil dihapus', 'status': 'success', 'deleted_count': affected}), 200
+        return jsonify({'error': 'Database tidak tersedia'}), 500
+
+    try:
+        cursor = conn.cursor()
+        cursor.execute("DELETE FROM pertanyaan_unknow")
+        conn.commit()
+        affected = cursor.rowcount
+        cursor.close()
+        conn.close()
+        return jsonify({'message': f'{affected} pertanyaan berhasil dihapus', 'status': 'success', 'deleted_count': affected}), 200
+    except Exception as e:
+        logger.error(f"Error deleting all unknown: {e}")
+        if conn:
+            conn.rollback()
+            conn.close()
+        return jsonify({'error': 'Gagal menghapus semua data'}), 500
 
 # ==================== KATEGORI & MODEL INFO (Database only) ====================
 @app.route('/kategori', methods=['GET', 'OPTIONS'])
