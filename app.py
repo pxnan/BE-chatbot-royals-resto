@@ -517,7 +517,7 @@ def get_admin_profile():
     return jsonify({'admin': admin}), 200
 
 # ==================== KELOLA ADMIN ====================
-# ==================== KELOLA ADMIN ====================
+
 @app.route('/api/admins', methods=['GET', 'OPTIONS'])
 @token_required
 def get_all_admins():
@@ -525,6 +525,7 @@ def get_all_admins():
         return '', 200
     if request.admin['role'] != 'super_admin':
         return jsonify({'error': 'Anda tidak memiliki izin'}), 403
+
     page = request.args.get('page', 1, type=int)
     per_page = request.args.get('per_page', 10, type=int)
     search = request.args.get('search', '', type=str)
@@ -532,36 +533,45 @@ def get_all_admins():
 
     conn = get_db_connection()
     if conn is None:
+        logger.error("Database connection failed in get_all_admins")
         return jsonify({'error': 'Database tidak tersedia'}), 500
 
-    cursor = get_db_cursor(conn, dictionary=True)
-    base_query = "SELECT id, username, email, full_name, role, is_active, last_login, created_at FROM admin WHERE 1=1"
-    params = []
-    if search:
-        base_query += " AND (username ILIKE %s OR email ILIKE %s OR full_name ILIKE %s)"
-        sp = f"%{search}%"
-        params.extend([sp, sp, sp])
-    query = base_query + " ORDER BY id DESC LIMIT %s OFFSET %s"
-    params.extend([per_page, offset])
-    cursor.execute(query, params)
-    admins = cursor.fetchall()
-    # total count
-    count_query = "SELECT COUNT(*) as total FROM admin WHERE 1=1"
-    if search:
-        count_query += " AND (username ILIKE %s OR email ILIKE %s OR full_name ILIKE %s)"
-        cursor.execute(count_query, [sp, sp, sp])
-    else:
-        cursor.execute(count_query)
-    total = cursor.fetchone()['total']
-    total_pages = (total + per_page - 1) // per_page
-    for admin in admins:
-        if admin.get('last_login'):
-            admin['last_login'] = admin['last_login'].strftime('%Y-%m-%d %H:%M:%S')
-        if admin.get('created_at'):
-            admin['created_at'] = admin['created_at'].strftime('%Y-%m-%d %H:%M:%S')
-    cursor.close()
-    conn.close()
-    return jsonify({'page': page, 'per_page': per_page, 'total_data': total, 'total_pages': total_pages, 'data': admins}), 200
+    try:
+        cursor = get_db_cursor(conn, dictionary=True)
+        base_query = "SELECT id, username, email, full_name, role, is_active, last_login, created_at FROM admin WHERE 1=1"
+        params = []
+        if search:
+            base_query += " AND (username ILIKE %s OR email ILIKE %s OR full_name ILIKE %s)"
+            sp = f"%{search}%"
+            params.extend([sp, sp, sp])
+        query = base_query + " ORDER BY id DESC LIMIT %s OFFSET %s"
+        params.extend([per_page, offset])
+        cursor.execute(query, params)
+        admins = cursor.fetchall()
+
+        # Count total
+        count_query = "SELECT COUNT(*) as total FROM admin WHERE 1=1"
+        if search:
+            count_query += " AND (username ILIKE %s OR email ILIKE %s OR full_name ILIKE %s)"
+            cursor.execute(count_query, [sp, sp, sp])
+        else:
+            cursor.execute(count_query)
+        total = cursor.fetchone()['total']
+        total_pages = (total + per_page - 1) // per_page
+
+        for admin in admins:
+            if admin.get('last_login'):
+                admin['last_login'] = admin['last_login'].strftime('%Y-%m-%d %H:%M:%S')
+            if admin.get('created_at'):
+                admin['created_at'] = admin['created_at'].strftime('%Y-%m-%d %H:%M:%S')
+        cursor.close()
+        conn.close()
+        return jsonify({'page': page, 'per_page': per_page, 'total_data': total, 'total_pages': total_pages, 'data': admins}), 200
+    except Exception as e:
+        logger.error(f"Error in get_all_admins: {e}")
+        if conn:
+            conn.close()
+        return jsonify({'error': 'Terjadi kesalahan pada server'}), 500
 
 @app.route('/api/admins', methods=['POST', 'OPTIONS'])
 @token_required
@@ -570,6 +580,7 @@ def create_admin():
         return '', 200
     if request.admin['role'] != 'super_admin':
         return jsonify({'error': 'Tidak memiliki izin'}), 403
+
     data = request.json or {}
     username = data.get('username', '').strip()
     password = data.get('password', '').strip()
@@ -577,6 +588,7 @@ def create_admin():
     full_name = data.get('full_name', '').strip()
     role = data.get('role', 'admin')
     is_active = data.get('is_active', True)
+
     if not username or not password or not email or not full_name:
         return jsonify({'error': 'Semua field harus diisi'}), 400
     if len(password) < 6:
@@ -584,18 +596,20 @@ def create_admin():
 
     conn = get_db_connection()
     if conn is None:
+        logger.error("Database connection failed in create_admin")
         return jsonify({'error': 'Database tidak tersedia'}), 500
 
-    cursor = conn.cursor()
     try:
-        # Cek username
+        cursor = conn.cursor()
+        # Check username
         cursor.execute("SELECT id FROM admin WHERE username = %s", (username,))
         if cursor.fetchone():
             return jsonify({'error': 'Username sudah digunakan'}), 409
-        # Cek email
+        # Check email
         cursor.execute("SELECT id FROM admin WHERE email = %s", (email,))
         if cursor.fetchone():
             return jsonify({'error': 'Email sudah digunakan'}), 409
+
         hashed = hash_password(password)
         cursor.execute(
             "INSERT INTO admin (username, password, email, full_name, role, is_active) VALUES (%s, %s, %s, %s, %s, %s) RETURNING id",
@@ -603,14 +617,15 @@ def create_admin():
         )
         new_id = cursor.fetchone()[0]
         conn.commit()
+        cursor.close()
+        conn.close()
         return jsonify({'message': 'Admin berhasil dibuat', 'admin_id': new_id}), 201
     except Exception as e:
         conn.rollback()
         logger.error(f"Error creating admin: {e}")
-        return jsonify({'error': str(e)}), 500
-    finally:
-        cursor.close()
-        conn.close()
+        if conn:
+            conn.close()
+        return jsonify({'error': 'Gagal membuat admin'}), 500
 
 @app.route('/api/admins/<int:admin_id>', methods=['PUT', 'OPTIONS'])
 @token_required
@@ -619,6 +634,7 @@ def update_admin(admin_id):
         return '', 200
     if request.admin['role'] != 'super_admin':
         return jsonify({'error': 'Tidak memiliki izin'}), 403
+
     data = request.json or {}
     email = data.get('email', '').strip()
     full_name = data.get('full_name', '').strip()
@@ -627,29 +643,34 @@ def update_admin(admin_id):
 
     conn = get_db_connection()
     if conn is None:
+        logger.error("Database connection failed in update_admin")
         return jsonify({'error': 'Database tidak tersedia'}), 500
 
-    cursor = conn.cursor()
     try:
+        cursor = conn.cursor()
+        # Check admin exists
         cursor.execute("SELECT id FROM admin WHERE id = %s", (admin_id,))
         if not cursor.fetchone():
             return jsonify({'error': 'Admin tidak ditemukan'}), 404
+        # Check email not used by others
         cursor.execute("SELECT id FROM admin WHERE email = %s AND id != %s", (email, admin_id))
         if cursor.fetchone():
             return jsonify({'error': 'Email sudah digunakan oleh admin lain'}), 409
+
         cursor.execute(
             "UPDATE admin SET email=%s, full_name=%s, role=%s, is_active=%s, updated_at=NOW() WHERE id=%s",
             (email, full_name, role, is_active, admin_id)
         )
         conn.commit()
+        cursor.close()
+        conn.close()
         return jsonify({'message': 'Admin berhasil diupdate'}), 200
     except Exception as e:
         conn.rollback()
         logger.error(f"Error updating admin: {e}")
-        return jsonify({'error': str(e)}), 500
-    finally:
-        cursor.close()
-        conn.close()
+        if conn:
+            conn.close()
+        return jsonify({'error': 'Gagal mengupdate admin'}), 500
 
 @app.route('/api/admins/<int:admin_id>/reset-password', methods=['POST', 'OPTIONS'])
 @token_required
@@ -658,6 +679,7 @@ def reset_admin_password(admin_id):
         return '', 200
     if request.admin['role'] != 'super_admin':
         return jsonify({'error': 'Tidak memiliki izin'}), 403
+
     data = request.json or {}
     new_password = data.get('new_password', '').strip()
     if not new_password or len(new_password) < 6:
@@ -665,24 +687,27 @@ def reset_admin_password(admin_id):
 
     conn = get_db_connection()
     if conn is None:
+        logger.error("Database connection failed in reset_password")
         return jsonify({'error': 'Database tidak tersedia'}), 500
 
-    cursor = conn.cursor()
     try:
+        cursor = conn.cursor()
         cursor.execute("SELECT id FROM admin WHERE id = %s", (admin_id,))
         if not cursor.fetchone():
             return jsonify({'error': 'Admin tidak ditemukan'}), 404
+
         hashed = hash_password(new_password)
         cursor.execute("UPDATE admin SET password=%s, updated_at=NOW() WHERE id=%s", (hashed, admin_id))
         conn.commit()
+        cursor.close()
+        conn.close()
         return jsonify({'message': 'Password berhasil direset'}), 200
     except Exception as e:
         conn.rollback()
         logger.error(f"Error resetting password: {e}")
-        return jsonify({'error': str(e)}), 500
-    finally:
-        cursor.close()
-        conn.close()
+        if conn:
+            conn.close()
+        return jsonify({'error': 'Gagal reset password'}), 500
 
 @app.route('/api/admins/<int:admin_id>', methods=['DELETE', 'OPTIONS'])
 @token_required
@@ -696,23 +721,26 @@ def delete_admin(admin_id):
 
     conn = get_db_connection()
     if conn is None:
+        logger.error("Database connection failed in delete_admin")
         return jsonify({'error': 'Database tidak tersedia'}), 500
 
-    cursor = conn.cursor()
     try:
+        cursor = conn.cursor()
         cursor.execute("SELECT id FROM admin WHERE id = %s", (admin_id,))
         if not cursor.fetchone():
             return jsonify({'error': 'Admin tidak ditemukan'}), 404
+
         cursor.execute("DELETE FROM admin WHERE id = %s", (admin_id,))
         conn.commit()
+        cursor.close()
+        conn.close()
         return jsonify({'message': 'Admin berhasil dihapus'}), 200
     except Exception as e:
         conn.rollback()
         logger.error(f"Error deleting admin: {e}")
-        return jsonify({'error': str(e)}), 500
-    finally:
-        cursor.close()
-        conn.close()
+        if conn:
+            conn.close()
+        return jsonify({'error': 'Gagal menghapus admin'}), 500
 
 # ==================== UNKNOWN QUESTIONS ====================
 @app.route('/pertanyaan-unknown', methods=['GET', 'OPTIONS'])
