@@ -15,12 +15,9 @@
                 "POST",
                 "PUT",
                 "DELETE",
-                "OPTIONS"
+                "OPTIONS",
+                "PATCH"
             ]
         }
-    ],
-    "env": {
-        "FLASK_ENV": "production",
-        "FLASK_DEBUG": "False"
-    }
+    ]
 }
