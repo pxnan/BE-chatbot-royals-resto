@@ -41,7 +41,11 @@ JWT_EXPIRATION_HOURS = int(os.getenv("JWT_EXPIRATION_HOURS", 24))
 
 # ===================== Inisialisasi Flask =====================
 app = Flask(__name__)
-CORS(app, origins="*",
+
+allowed_origins_str = os.getenv("ALLOWED_ORIGINS", "")
+ALLOWED_ORIGINS = [origin.strip() for origin in allowed_origins_str.split(",")] if allowed_origins_str else ["*"]
+
+CORS(app, origins=ALLOWED_ORIGINS, 
      methods=["GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"],
      allow_headers=["Content-Type", "Authorization", "X-API-Key", "X-Requested-With"],
      supports_credentials=True,
