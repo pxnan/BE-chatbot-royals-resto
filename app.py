@@ -280,7 +280,7 @@ def save_unknown_question(question):
 # ==================== ENDPOINT ROOT ====================
 @app.route('/')
 def index():
-    return render_template('index.html')
+    return jsonify({'message': 'Selamat datang di API Chatbot Royals Resto!'})
 
 @app.route('/health')
 def health():
