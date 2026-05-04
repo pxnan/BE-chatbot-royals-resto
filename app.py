@@ -169,11 +169,11 @@ def load_models_and_data():
     except Exception as e:
         logger.error(f"Error loading model: {e}")
 
-    # Load dataset from database (not from CSV anymore)
+    # Load dataset from database (not from CSV)
     load_dataset_from_db()
 
 def load_dataset_from_db():
-    """Load dataset dari tabel database"""
+    """Load dataset dari tabel database (dataset)"""
     global pertanyaan_list, answers, kategori_list
     conn = get_db_connection()
     if conn is None:
@@ -710,7 +710,7 @@ def model_info():
         'vectorizer_loaded': vectorizer_qa is not None
     })
 
-# ==================== DATASET MANAGEMENT (Hanya Database) ====================
+# ==================== DATASET MANAGEMENT (Database only) ====================
 @app.route('/get-all-data', methods=['GET', 'OPTIONS'])
 def get_all_data():
     if request.method == 'OPTIONS':
@@ -759,7 +759,7 @@ def get_all_data():
         'total_data': total,
         'total_pages': total_pages,
         'data': data,
-        'categories': []  # jika butuh kategori terpisah, bisa dibuat endpoint lain
+        'categories': []  # Bisa diambil dari endpoint /kategori
     }), 200
 
 @app.route('/tambah-data', methods=['POST', 'OPTIONS'])
@@ -788,7 +788,7 @@ def tambah_data():
     conn.commit()
     cursor.close()
     conn.close()
-    load_dataset_from_db()  # refresh memory
+    load_dataset_from_db()  # Refresh memory
     return jsonify({
         'message': 'Data berhasil ditambahkan',
         'data': {'pertanyaan': pertanyaan, 'jawaban': jawaban, 'kategori': kategori},
@@ -976,7 +976,7 @@ def fix_csv():
     if request.method == 'OPTIONS':
         return '', 200
     try:
-        # Baca data dari database, lalu ekspor ke CSV untuk memperbaiki file
+        # Baca data dari database, lalu ekspor ke CSV
         conn = get_db_connection()
         if conn is None:
             return jsonify({'error': 'Database tidak tersedia'}), 500
@@ -985,7 +985,6 @@ def fix_csv():
         rows = cursor.fetchall()
         cursor.close()
         conn.close()
-        # Tulis ke CSV
         os.makedirs(os.path.dirname(csv_path), exist_ok=True)
         with open(csv_path, 'w', encoding='utf-8', newline='') as f:
             writer = csv.writer(f, quoting=csv.QUOTE_ALL)
