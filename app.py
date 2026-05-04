@@ -150,10 +150,7 @@ answers = []
 pertanyaan_list = []
 kategori_list = []
 
-BASE_DIR = os.path.dirname(__file__)
-
-model_path = os.path.join(BASE_DIR, 'model', 'model_qa.pkl')
-csv_path = os.path.join(BASE_DIR, 'data', 'dataset.csv')
+model_path = os.path.join(os.getenv("MODEL_BASE_PATH", "model/"), 'model_qa.pkl')
 try:
     if os.path.exists(model_path):
         with open(model_path, 'rb') as f:
@@ -238,10 +235,7 @@ def save_unknown_question(question):
 # ==================== ENDPOINT ROOT ====================
 @app.route('/')
 def index():
-    return jsonify({
-        "message": "Royal's Resto API running 🚀",
-        "status": "ok"
-    })
+    return render_template('index.html')
 
 @app.route('/health')
 def health():
@@ -1305,11 +1299,11 @@ if __name__ == '__main__':
     print("=" * 50)
     print("🚀 Royal's Resto Chatbot API Server")
     print("=" * 50)
-    print(f"📡 Server running on: http://localhost:{FLASK_PORT}")
+    print(f"📡 Server running on: http://127.0.0.1:{FLASK_PORT}")
     print(f"🔑 API Key: {API_KEY}")
     print(f"🌍 Environment: {FLASK_ENV}")
     print(f"🤖 Model loaded: {model_qa is not None}")
     print(f"📊 Dataset size: {len(pertanyaan_list)} questions")
     print("=" * 50)
     
-    app = app
+    app.run(debug=FLASK_DEBUG,port=FLASK_PORT)
