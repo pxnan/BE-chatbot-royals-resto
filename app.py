@@ -137,7 +137,7 @@ def get_db_cursor(conn, dictionary=True):
         return conn.cursor(cursor_factory=RealDictCursor)
     return conn.cursor()
 
-# ===================== Lazy loading untuk model =====================
+# ===================== Lazy loading untuk model dan dataset =====================
 model_qa = None
 vectorizer_qa = None
 answers = []
@@ -151,7 +151,7 @@ def load_models_and_data():
         return
     _models_loaded = True
 
-    # Load model if exists
+    # Load model jika ada
     model_path = os.path.join(os.getenv("MODEL_BASE_PATH", "model/"), 'model_qa.pkl')
     try:
         if os.path.exists(model_path):
@@ -169,7 +169,7 @@ def load_models_and_data():
     except Exception as e:
         logger.error(f"Error loading model: {e}")
 
-    # Load dataset from database (not from CSV)
+    # Load dataset dari database
     load_dataset_from_db()
 
 def load_dataset_from_db():
@@ -688,13 +688,21 @@ def delete_all_unknown():
     conn.close()
     return jsonify({'message': f'{affected} pertanyaan berhasil dihapus', 'status': 'success', 'deleted_count': affected}), 200
 
-# ==================== KATEGORI & MODEL INFO ====================
+# ==================== KATEGORI & MODEL INFO (Database only) ====================
 @app.route('/kategori', methods=['GET', 'OPTIONS'])
 def get_kategori():
     if request.method == 'OPTIONS':
         return '', 200
-    load_models_and_data()
-    categories = sorted(list(set(kategori_list))) if kategori_list else []
+    # Ambil langsung dari database untuk memastikan data terkini
+    conn = get_db_connection()
+    if conn is None:
+        return jsonify({'kategori': []}), 200
+    cursor = get_db_cursor(conn, dictionary=True)
+    cursor.execute("SELECT DISTINCT kategori FROM dataset ORDER BY kategori")
+    rows = cursor.fetchall()
+    categories = [row['kategori'] for row in rows]
+    cursor.close()
+    conn.close()
     return jsonify({'kategori': categories})
 
 @app.route('/model-info', methods=['GET', 'OPTIONS'])
@@ -702,9 +710,20 @@ def model_info():
     if request.method == 'OPTIONS':
         return '', 200
     load_models_and_data()
+    # Ambil jumlah dari database untuk memastikan akurasi
+    conn = get_db_connection()
+    total_questions = 0
+    if conn:
+        cursor = get_db_cursor(conn, dictionary=True)
+        cursor.execute("SELECT COUNT(*) as total FROM dataset")
+        total_questions = cursor.fetchone()['total']
+        cursor.close()
+        conn.close()
+    else:
+        total_questions = len(pertanyaan_list)
     return jsonify({
-        'total_questions': len(pertanyaan_list),
-        'total_answers': len(answers),
+        'total_questions': total_questions,
+        'total_answers': total_questions,
         'categories': sorted(list(set(kategori_list))) if kategori_list else [],
         'model_loaded': model_qa is not None,
         'vectorizer_loaded': vectorizer_qa is not None
@@ -759,7 +778,7 @@ def get_all_data():
         'total_data': total,
         'total_pages': total_pages,
         'data': data,
-        'categories': []  # Bisa diambil dari endpoint /kategori
+        'categories': []
     }), 200
 
 @app.route('/tambah-data', methods=['POST', 'OPTIONS'])
@@ -778,7 +797,6 @@ def tambah_data():
         return jsonify({'error': 'Database tidak tersedia'}), 500
 
     cursor = conn.cursor()
-    # Cek duplikat
     cursor.execute("SELECT id FROM dataset WHERE pertanyaan ILIKE %s", (pertanyaan,))
     if cursor.fetchone():
         cursor.close()
@@ -788,7 +806,8 @@ def tambah_data():
     conn.commit()
     cursor.close()
     conn.close()
-    load_dataset_from_db()  # Refresh memory
+    # Refresh memory
+    load_dataset_from_db()
     return jsonify({
         'message': 'Data berhasil ditambahkan',
         'data': {'pertanyaan': pertanyaan, 'jawaban': jawaban, 'kategori': kategori},
@@ -812,7 +831,6 @@ def update_data():
         return jsonify({'error': 'Database tidak tersedia'}), 500
 
     cursor = get_db_cursor(conn, dictionary=True)
-    # Dapatkan id berdasarkan urutan (index)
     cursor.execute("SELECT id FROM dataset ORDER BY id")
     ids = [row['id'] for row in cursor.fetchall()]
     if index < 0 or index >= len(ids):
@@ -938,6 +956,7 @@ def train_model():
             'categories': k_list
         }, f)
 
+    # Refresh model di memory
     global _models_loaded
     _models_loaded = False
     load_models_and_data()
@@ -951,7 +970,7 @@ def train_model():
         'status': 'success'
     }), 200
 
-# ==================== DEBUG (CSV masih dipertahankan untuk keperluan debugging) ====================
+# ==================== DEBUG (opsional) ====================
 csv_path = os.getenv("DATA_PATH", "data/dataset.csv")
 
 @app.route('/cek-csv', methods=['GET', 'OPTIONS'])
@@ -976,7 +995,6 @@ def fix_csv():
     if request.method == 'OPTIONS':
         return '', 200
     try:
-        # Baca data dari database, lalu ekspor ke CSV
         conn = get_db_connection()
         if conn is None:
             return jsonify({'error': 'Database tidak tersedia'}), 500
