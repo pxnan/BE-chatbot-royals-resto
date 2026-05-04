@@ -24,18 +24,18 @@ load_dotenv()
 # Database Configuration
 DATABASE_URL = os.getenv("DATABASE_URL")
 
-FLASK_ENV = os.getenv("FLASK_ENV", "development")
-FLASK_DEBUG = os.getenv("FLASK_DEBUG", "False").lower() == "true"
-FLASK_PORT = int(os.getenv("FLASK_PORT", 5000))
-ALLOWED_ORIGINS = os.getenv("ALLOWED_ORIGINS", "https://royals-resto-bot.vercel.app").split(",")
+FLASK_ENV = os.getenv("FLASK_ENV")
+FLASK_DEBUG = os.getenv("FLASK_DEBUG").lower() == "true"
+FLASK_PORT = int(os.getenv("FLASK_PORT"))
+ALLOWED_ORIGINS = os.getenv("ALLOWED_ORIGINS").split(",")
 
 # ===================== Konfigurasi API Key =====================
-API_KEY = os.getenv("API_KEY", "RoyalsResto2024SecureKey!@#$")
+API_KEY = os.getenv("API_KEY")
 API_KEY_HEADER = "X-API-Key"
 
 # ===================== Konfigurasi JWT =====================
-JWT_SECRET_KEY = os.getenv("JWT_SECRET_KEY", "royal_resto_chatbot_secret_key_2024")
-JWT_EXPIRATION_HOURS = int(os.getenv("JWT_EXPIRATION_HOURS", 24))
+JWT_SECRET_KEY = os.getenv("JWT_SECRET_KEY")
+JWT_EXPIRATION_HOURS = int(os.getenv("JWT_EXPIRATION_HOURS"))
 
 # ===================== Inisialisasi Flask =====================
 app = Flask(__name__)
