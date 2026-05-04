@@ -1669,4 +1669,4 @@ if __name__ == '__main__':
     print(f"📝 Allowed Origins: *")
     print("=" * 50)
     
-    app.run(debug=FLASK_DEBUG, port=FLASK_PORT)
+    app.run(debug=FLASK_DEBUG, host='0.0.0.0')
