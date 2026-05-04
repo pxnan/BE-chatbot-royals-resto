@@ -1,5 +1,9 @@
+from http.client import HTTPException
 import pickle
+import sys
+import traceback
 import pandas as pd
+import logging
 import psycopg2
 from psycopg2.extras import RealDictCursor
 from preprocessing import preprocess
@@ -20,6 +24,18 @@ import secrets
 
 # ===================== Load .env =====================
 load_dotenv()
+
+# ===================== Konfigurasi Logging =====================
+# Pastikan log muncul di Vercel (stderr)
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+    handlers=[
+        logging.StreamHandler(sys.stderr)  # Vercel menangkap stderr
+    ]
+)
+logger = logging.getLogger(__name__)
+    
 
 # Database Configuration
 DATABASE_URL = os.getenv("DATABASE_URL")
@@ -66,6 +82,35 @@ def handle_preflight():
 @app.route('/<path:path>', methods=['OPTIONS'])
 def options_handler(path):
     return '', 200
+
+# ===================== Global Error Handler =====================
+@app.errorhandler(Exception)
+def handle_exception(e):
+    """Tangkap semua exception yang tidak tertangani dan log ke Vercel."""
+    # Log traceback lengkap
+    logger.error(f"Unhandled Exception: {str(e)}")
+    logger.error(traceback.format_exc())
+
+    # Jika error HTTP khusus (404, 405, dll), tetap gunakan handler bawaan
+    if isinstance(e, HTTPException):
+        return e
+
+    # Kembalikan respon JSON dengan status 500
+    return jsonify({
+        'error': 'Internal Server Error',
+        'message': str(e) if app.debug else 'Terjadi kesalahan pada server.',
+        'status_code': 500
+    }), 500
+
+# Optional: Log setiap request (berguna untuk debugging)
+@app.before_request
+def log_request_info():
+    logger.info(f"Request: {request.method} {request.path} from {request.remote_addr}")
+
+@app.after_request
+def log_response_info(response):
+    logger.info(f"Response: {response.status} for {request.method} {request.path}")
+    return response
 
 # ===================== Helper Functions =====================
 def hash_password(password):
