@@ -24,24 +24,37 @@ load_dotenv()
 # Database Configuration
 DATABASE_URL = os.getenv("DATABASE_URL")
 
-FLASK_ENV = os.getenv("FLASK_ENV")
-FLASK_DEBUG = os.getenv("FLASK_DEBUG").lower() == "true"
-FLASK_PORT = int(os.getenv("FLASK_PORT"))
-ALLOWED_ORIGINS = os.getenv("ALLOWED_ORIGINS").split(",")
+FLASK_ENV = os.getenv("FLASK_ENV", "production")
+FLASK_DEBUG = os.getenv("FLASK_DEBUG", "False").lower() == "true"
+FLASK_PORT = int(os.getenv("FLASK_PORT", 5000))
+
+# Parse ALLOWED_ORIGINS - bisa berupa string dengan koma atau list
+allowed_origins_str = os.getenv("ALLOWED_ORIGINS", "")
+if allowed_origins_str:
+    ALLOWED_ORIGINS = [origin.strip() for origin in allowed_origins_str.split(",")]
+else:
+    # Default origins untuk production dan development
+    ALLOWED_ORIGINS = [
+        "https://royals-resto-bot.vercel.app",
+        "https://royals-resto-bot.vercel.app/",
+        "http://localhost:5173",
+        "http://localhost:3000",
+        "http://127.0.0.1:5000"
+    ]
 
 # ===================== Konfigurasi API Key =====================
-API_KEY = os.getenv("API_KEY")
+API_KEY = os.getenv("API_KEY", "RoyalsResto2024SecureKey!@#$")
 API_KEY_HEADER = "X-API-Key"
 
 # ===================== Konfigurasi JWT =====================
-JWT_SECRET_KEY = os.getenv("JWT_SECRET_KEY")
-JWT_EXPIRATION_HOURS = int(os.getenv("JWT_EXPIRATION_HOURS"))
+JWT_SECRET_KEY = os.getenv("JWT_SECRET_KEY", "royal_resto_chatbot_secret_key_2024")
+JWT_EXPIRATION_HOURS = int(os.getenv("JWT_EXPIRATION_HOURS", 24))
 
 # ===================== Inisialisasi Flask =====================
 app = Flask(__name__)
 
-# ===================== KONFIGURASI CORS YANG BENAR =====================
-# Izinkan semua origin untuk development
+# ===================== KONFIGURASI CORS UNTUK PRODUCTION =====================
+# Mengizinkan semua origin yang terdaftar di ALLOWED_ORIGINS
 CORS(app, 
     origins=ALLOWED_ORIGINS,
     methods=["GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"],
@@ -55,7 +68,14 @@ def handle_preflight():
     """Handle preflight OPTIONS request untuk semua route"""
     if request.method == "OPTIONS":
         response = jsonify({})
-        response.headers.add("Access-Control-Allow-Origin", ALLOWED_ORIGINS[0] if ALLOWED_ORIGINS else "*")
+        origin = request.headers.get('Origin')
+        
+        # Cek apakah origin diizinkan
+        if origin in ALLOWED_ORIGINS:
+            response.headers.add('Access-Control-Allow-Origin', origin)
+        elif FLASK_ENV == "development":
+            response.headers.add('Access-Control-Allow-Origin', '*')
+        
         response.headers.add("Access-Control-Allow-Headers", "Content-Type, Authorization, X-API-Key, X-Requested-With")
         response.headers.add("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS, PATCH")
         response.headers.add("Access-Control-Allow-Credentials", "false")
@@ -109,7 +129,7 @@ def token_required(f):
 def api_key_required(f):
     @wraps(f)
     def decorated(*args, **kwargs):
-        # Skip API key check untuk development (optional)
+        # Skip API key check untuk development
         if FLASK_ENV == "development":
             return f(*args, **kwargs)
         
@@ -134,6 +154,8 @@ def get_client_ip():
 # ===================== Database Connection =====================
 def get_db_connection():
     try:
+        if not DATABASE_URL:
+            raise Exception("DATABASE_URL not configured")
         conn = psycopg2.connect(DATABASE_URL)
         return conn
     except Exception as e:
@@ -146,21 +168,49 @@ def get_db_cursor(conn, dictionary=True):
     return conn.cursor()
 
 # ===================== Load Model =====================
-model_path = os.path.join(os.getenv("MODEL_BASE_PATH", "model/"), 'model_qa.pkl')
-with open(model_path, 'rb') as f:
-    qa_data = pickle.load(f)
+model_qa = None
+vectorizer_qa = None
+answers = []
+pertanyaan_list = []
+kategori_list = []
 
-model_qa = qa_data['model']
-vectorizer_qa = qa_data['vectorizer']
-answers = qa_data['answers']
-pertanyaan_list = qa_data['questions']
+# Coba load model jika ada
+model_path = os.path.join(os.getenv("MODEL_BASE_PATH", "model/"), 'model_qa.pkl')
+try:
+    with open(model_path, 'rb') as f:
+        qa_data = pickle.load(f)
+        model_qa = qa_data['model']
+        vectorizer_qa = qa_data['vectorizer']
+        answers = qa_data['answers']
+        pertanyaan_list = qa_data['questions']
+        kategori_list = qa_data.get('categories', [])
+    print(f"[INFO] Model loaded: {len(pertanyaan_list)} questions")
+except Exception as e:
+    print(f"[WARNING] Model not found: {e}")
 
 # ===================== Load Dataset =====================
 csv_path = os.getenv("DATA_PATH", "data/dataset.csv")
-df = pd.read_csv(csv_path, encoding='utf-8')
-df['processed'] = df['pertanyaan'].apply(preprocess)
+df = pd.DataFrame()
 
-kategori_list = df['kategori'].tolist() if 'kategori' in df.columns else []
+try:
+    if os.path.exists(csv_path):
+        df = pd.read_csv(csv_path, encoding='utf-8')
+        if 'pertanyaan' in df.columns:
+            df['processed'] = df['pertanyaan'].apply(preprocess)
+            if pertanyaan_list:
+                # Update dengan data dari CSV jika model sudah ada
+                pertanyaan_list = df['pertanyaan'].tolist()
+                answers = df['jawaban'].tolist()
+                kategori_list = df['kategori'].tolist() if 'kategori' in df.columns else []
+    else:
+        # Buat file CSV jika belum ada
+        os.makedirs(os.path.dirname(csv_path), exist_ok=True)
+        with open(csv_path, 'w', encoding='utf-8', newline='') as f:
+            writer = csv.writer(f)
+            writer.writerow(['pertanyaan', 'jawaban', 'kategori'])
+        print(f"[INFO] Created new CSV file: {csv_path}")
+except Exception as e:
+    print(f"[WARNING] Error loading dataset: {e}")
 
 # ===================== Save Unknown Question =====================
 def save_unknown_question(question):
@@ -188,20 +238,20 @@ def load_dataset_from_csv(csv_path):
             next(reader, None)  # Skip header
             for row in reader:
                 if len(row) >= 3:
-                    pertanyaan_list_temp.append(row[0])
-                    jawaban_list_temp.append(row[1])
-                    kategori_list_temp.append(row[2])
+                    pertanyaan_list_temp.append(row[0].strip())
+                    jawaban_list_temp.append(row[1].strip())
+                    kategori_list_temp.append(row[2].strip())
                 elif len(row) == 2:
-                    pertanyaan_list_temp.append(row[0])
-                    jawaban_list_temp.append(row[1])
+                    pertanyaan_list_temp.append(row[0].strip())
+                    jawaban_list_temp.append(row[1].strip())
                     kategori_list_temp.append('umum')
                 elif len(row) == 1:
-                    pertanyaan_list_temp.append(row[0])
+                    pertanyaan_list_temp.append(row[0].strip())
                     jawaban_list_temp.append('')
                     kategori_list_temp.append('umum')
     except FileNotFoundError:
         print(f"[WARNING] File {csv_path} not found, creating new file")
-        # Create header
+        os.makedirs(os.path.dirname(csv_path), exist_ok=True)
         with open(csv_path, 'w', encoding='utf-8', newline='') as f:
             writer = csv.writer(f)
             writer.writerow(['pertanyaan', 'jawaban', 'kategori'])
@@ -210,10 +260,15 @@ def load_dataset_from_csv(csv_path):
 
 def save_dataset_to_csv(csv_path, pertanyaan_list, jawaban_list, kategori_list):
     """Save dataset ke CSV file"""
+    os.makedirs(os.path.dirname(csv_path), exist_ok=True)
+    
     with open(csv_path, 'w', encoding='utf-8', newline='') as f:
         writer = csv.writer(f, quoting=csv.QUOTE_ALL)
         writer.writerow(['pertanyaan', 'jawaban', 'kategori'])
-        for p, j, k in zip(pertanyaan_list, jawaban_list, kategori_list):
+        for i in range(len(pertanyaan_list)):
+            p = pertanyaan_list[i]
+            j = jawaban_list[i] if i < len(jawaban_list) else ''
+            k = kategori_list[i] if i < len(kategori_list) else 'umum'
             writer.writerow([p, j, k])
 
 # ===================== ENDPOINTS =====================
@@ -1627,6 +1682,7 @@ if __name__ == '__main__':
     print(f"📡 Server running on: http://localhost:{FLASK_PORT}")
     print(f"🔑 API Key: {API_KEY}")
     print(f"🌍 Environment: {FLASK_ENV}")
+    print(f"📝 Allowed Origins: {ALLOWED_ORIGINS}")
     print("=" * 50)
     
     app.run(debug=FLASK_DEBUG, port=FLASK_PORT)
