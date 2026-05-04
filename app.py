@@ -41,33 +41,22 @@ JWT_EXPIRATION_HOURS = int(os.getenv("JWT_EXPIRATION_HOURS", 24))
 
 app = Flask(__name__)
 
+# ===================== MIDDLEWARE CORS MANUAL (WAJIB UNTUK VERCEL) =====================
 @app.after_request
 def add_cors_headers(response):
     """
     Tambahkan CORS headers ke setiap response.
-    Di development: izinkan semua origin.
-    Di production: izinkan hanya origin yang terdaftar di ALLOWED_ORIGINS.
+    Di Vercel, flask-cors sering gagal, maka kita paksa dengan middleware manual.
     """
-    # Ambil origin yang merequest
-    origin = request.headers.get('Origin')
-    allowed_origins = os.getenv('ALLOWED_ORIGINS', '*')
-    
-    # Jika allowed_origins adalah string "*", izinkan semua
-    if allowed_origins == '*':
-        response.headers['Access-Control-Allow-Origin'] = '*'
-    else:
-        # Jika ada daftar origin yang dipisah koma
-        allowed_list = [o.strip() for o in allowed_origins.split(',')]
-        if origin in allowed_list:
-            response.headers['Access-Control-Allow-Origin'] = origin
-        # Jika tidak ada origin yang cocok, jangan set header (bisa juga set ke '*' sebagai fallback)
-    
-    response.headers['Access-Control-Allow-Headers'] = 'Content-Type, Authorization, X-API-Key'
-    response.headers['Access-Control-Allow-Methods'] = 'GET, POST, PUT, DELETE, OPTIONS'
-    response.headers['Access-Control-Allow-Credentials'] = 'true'
+    # Izinkan semua origin (bisa diubah nanti jika sudah berhasil)
+    response.headers['Access-Control-Allow-Origin'] = '*'
+    response.headers['Access-Control-Allow-Headers'] = 'Content-Type, Authorization, X-API-Key, X-Requested-With'
+    response.headers['Access-Control-Allow-Methods'] = 'GET, POST, PUT, DELETE, OPTIONS, PATCH'
+    response.headers['Access-Control-Allow-Credentials'] = 'false'
+    response.headers['Access-Control-Max-Age'] = '86400'
     return response
 
-# Tangani preflight OPTIONS request secara global
+# Tangani semua request OPTIONS (preflight) langsung dengan response 200
 @app.route('/', defaults={'path': ''}, methods=['OPTIONS'])
 @app.route('/<path:path>', methods=['OPTIONS'])
 def options_handler(path):
