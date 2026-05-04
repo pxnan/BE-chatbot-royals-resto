@@ -6,7 +6,7 @@ import csv
 import time
 from datetime import datetime, timedelta
 from functools import wraps
-from flask import Flask, request, jsonify
+from flask import Flask, request, jsonify, render_template
 from flask_cors import CORS
 from dotenv import load_dotenv
 import bcrypt
@@ -259,7 +259,7 @@ def save_unknown_question(question):
 # ==================== ENDPOINTS =====================
 @app.route('/')
 def index():
-    return jsonify({'message': 'Selamat datang di API Chatbot Royals Resto!'})
+    return render_template('index.html')
 
 @app.route('/health')
 def health():
