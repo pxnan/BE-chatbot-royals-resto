@@ -41,16 +41,19 @@ JWT_EXPIRATION_HOURS = int(os.getenv("JWT_EXPIRATION_HOURS", 24))
 
 app = Flask(__name__)
 
-# Baca allowed_origins dari env
-allowed_origins_str = os.getenv("ALLOWED_ORIGINS", "*")
-ALLOWED_ORIGINS = allowed_origins_str.split(",") if allowed_origins_str != "*" else "*"
+allowed_origins_str = os.getenv("ALLOWED_ORIGINS")
 
-CORS(app,
-    origins=ALLOWED_ORIGINS,
-    methods=["GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"],
-    allow_headers=["Content-Type", "Authorization", "X-API-Key", "X-Requested-With"],
-    supports_credentials=False,
-    max_age=86400)
+if not allowed_origins_str or allowed_origins_str == "*":
+    # Saat development (boleh semua)
+    CORS(app)
+else:
+    ALLOWED_ORIGINS = [origin.strip() for origin in allowed_origins_str.split(",")]
+
+    CORS(app,
+        resources={r"/*": {"origins": ALLOWED_ORIGINS}},
+        methods=["GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"],
+        allow_headers=["Content-Type", "Authorization", "X-API-Key", "X-Requested-With"],
+        supports_credentials=True)
 
 @app.route('/', defaults={'path': ''}, methods=['OPTIONS'])
 @app.route('/<path:path>', methods=['OPTIONS'])
