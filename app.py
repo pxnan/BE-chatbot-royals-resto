@@ -42,7 +42,7 @@ JWT_EXPIRATION_HOURS = int(os.getenv("JWT_EXPIRATION_HOURS", 24))
 # ===================== Inisialisasi Flask =====================
 app = Flask(__name__)
 
-allowed_origins_str = os.getenv("ALLOWED_ORIGINS", "")
+allowed_origins_str = os.getenv("ALLOWED_ORIGINS", "https://royals-resto-bot.vercel.app/")
 ALLOWED_ORIGINS = [origin.strip() for origin in allowed_origins_str.split(",")] if allowed_origins_str else ["*"]
 
 CORS(app, origins=ALLOWED_ORIGINS, 
