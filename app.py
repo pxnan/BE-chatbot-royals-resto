@@ -28,20 +28,6 @@ FLASK_ENV = os.getenv("FLASK_ENV", "production")
 FLASK_DEBUG = os.getenv("FLASK_DEBUG", "False").lower() == "true"
 FLASK_PORT = int(os.getenv("FLASK_PORT", 5000))
 
-# Parse ALLOWED_ORIGINS - bisa berupa string dengan koma atau list
-allowed_origins_str = os.getenv("ALLOWED_ORIGINS", "")
-if allowed_origins_str:
-    ALLOWED_ORIGINS = [origin.strip() for origin in allowed_origins_str.split(",")]
-else:
-    # Default origins untuk production dan development
-    ALLOWED_ORIGINS = [
-        "https://royals-resto-bot.vercel.app",
-        "https://royals-resto-bot.vercel.app/",
-        "http://localhost:5173",
-        "http://localhost:3000",
-        "http://127.0.0.1:5000"
-    ]
-
 # ===================== Konfigurasi API Key =====================
 API_KEY = os.getenv("API_KEY", "RoyalsResto2024SecureKey!@#$")
 API_KEY_HEADER = "X-API-Key"
@@ -53,34 +39,37 @@ JWT_EXPIRATION_HOURS = int(os.getenv("JWT_EXPIRATION_HOURS", 24))
 # ===================== Inisialisasi Flask =====================
 app = Flask(__name__)
 
-# ===================== KONFIGURASI CORS UNTUK PRODUCTION =====================
-# Mengizinkan semua origin yang terdaftar di ALLOWED_ORIGINS
 CORS(app, 
-    origins=ALLOWED_ORIGINS,
-    methods=["GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"],
-    allow_headers=["Content-Type", "Authorization", "X-API-Key", "X-Requested-With"],
-    supports_credentials=False,
-    max_age=86400)
+     origins="*",
+     methods=["GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"],
+     allow_headers=["Content-Type", "Authorization", "X-API-Key", "X-Requested-With"],
+     supports_credentials=True)
 
-# ===================== HANDLE PREFLIGHT REQUEST MANUAL =====================
+# ===================== HANDLER KHUSUS UNTUK PREFLIGHT =====================
 @app.before_request
 def handle_preflight():
-    """Handle preflight OPTIONS request untuk semua route"""
+    """Handle semua preflight OPTIONS request"""
     if request.method == "OPTIONS":
         response = jsonify({})
-        origin = request.headers.get('Origin')
-        
-        # Cek apakah origin diizinkan
-        if origin in ALLOWED_ORIGINS:
-            response.headers.add('Access-Control-Allow-Origin', origin)
-        elif FLASK_ENV == "development":
-            response.headers.add('Access-Control-Allow-Origin', '*')
-        
-        response.headers.add("Access-Control-Allow-Headers", "Content-Type, Authorization, X-API-Key, X-Requested-With")
-        response.headers.add("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS, PATCH")
-        response.headers.add("Access-Control-Allow-Credentials", "false")
-        response.headers.add("Access-Control-Max-Age", "86400")
-        return response, 200
+        response.headers.add("Access-Control-Allow-Origin", "*")
+        response.headers.add("Access-Control-Allow-Headers", "Content-Type, Authorization, X-API-Key")
+        response.headers.add("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS")
+        response.headers.add("Access-Control-Allow-Credentials", "true")
+        response.status_code = 200
+        return response
+
+# ===================== ATAU TAMBAHKAN ROUTE OPTIONS UNTUK SEMUA PATH =====================
+@app.route('/', defaults={'path': ''}, methods=['OPTIONS'])
+@app.route('/<path:path>', methods=['OPTIONS'])
+def options_handler(path):
+    """Handler untuk semua OPTIONS request"""
+    response = jsonify({})
+    response.headers.add("Access-Control-Allow-Origin", "*")
+    response.headers.add("Access-Control-Allow-Headers", "Content-Type, Authorization, X-API-Key")
+    response.headers.add("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS")
+    response.headers.add("Access-Control-Allow-Credentials", "true")
+    response.headers.add("Access-Control-Max-Age", "86400")
+    return response, 200
 
 # ===================== Helper Functions =====================
 def hash_password(password):
@@ -1669,11 +1658,6 @@ def change_password():
         print(f"[ERROR] Change password: {e}")
         return jsonify({'error': 'Terjadi kesalahan saat mengganti password'}), 500
 
-# Tambahkan handler OPTIONS untuk semua route yang belum ditangani
-@app.route('/<path:path>', methods=['OPTIONS'])
-def handle_options(path):
-    return jsonify({}), 200
-
 # ==================== MAIN ====================
 if __name__ == '__main__':
     print("=" * 50)
@@ -1682,7 +1666,7 @@ if __name__ == '__main__':
     print(f"📡 Server running on: http://localhost:{FLASK_PORT}")
     print(f"🔑 API Key: {API_KEY}")
     print(f"🌍 Environment: {FLASK_ENV}")
-    print(f"📝 Allowed Origins: {ALLOWED_ORIGINS}")
+    print(f"📝 Allowed Origins: *")
     print("=" * 50)
     
     app.run(debug=FLASK_DEBUG, port=FLASK_PORT)
