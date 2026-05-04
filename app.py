@@ -41,12 +41,7 @@ JWT_EXPIRATION_HOURS = int(os.getenv("JWT_EXPIRATION_HOURS", 24))
 
 app = Flask(__name__)
 
-CORS(app, 
-    origins="*",
-    methods=["GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"],
-    allow_headers=["Content-Type", "Authorization", "X-API-Key", "X-Requested-With"],
-    supports_credentials=False,
-    max_age=86400)
+CORS(app)
 
 # ===================== HANDLE PREFLIGHT REQUEST MANUAL =====================
 @app.before_request
