@@ -1306,4 +1306,4 @@ if __name__ == '__main__':
     print(f"📊 Dataset size: {len(pertanyaan_list)} questions")
     print("=" * 50)
     
-    app.run(debug=FLASK_DEBUG,port=FLASK_PORT)
+    app.run()
