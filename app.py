@@ -747,15 +747,16 @@ def delete_admin(admin_id):
 def get_unknown_questions():
     if request.method == 'OPTIONS':
         return '', 200
-    page = request.args.get('page', 1, type=int)
-    per_page = 10
-    offset = (page - 1) * per_page
-
-    conn = get_db_connection()
-    if conn is None:
-        return jsonify({'error': 'Database tidak tersedia'}), 500
-
     try:
+        page = request.args.get('page', 1, type=int)
+        per_page = request.args.get('per_page', 10, type=int)
+        offset = (page - 1) * per_page
+
+        conn = get_db_connection()
+        if conn is None:
+            logger.error("Database connection failed in get_unknown_questions")
+            return jsonify({'error': 'Database tidak tersedia'}), 500
+
         cursor = get_db_cursor(conn, dictionary=True)
         cursor.execute("SELECT * FROM pertanyaan_unknow ORDER BY id DESC LIMIT %s OFFSET %s", (per_page, offset))
         data = cursor.fetchall()
@@ -763,12 +764,17 @@ def get_unknown_questions():
         total = cursor.fetchone()['total']
         cursor.close()
         conn.close()
+
         total_pages = (total + per_page - 1) // per_page
-        return jsonify({'page': page, 'per_page': per_page, 'total_data': total, 'total_pages': total_pages, 'data': data}), 200
+        return jsonify({
+            'page': page,
+            'per_page': per_page,
+            'total_data': total,
+            'total_pages': total_pages,
+            'data': data
+        }), 200
     except Exception as e:
         logger.error(f"Error in get_unknown_questions: {e}")
-        if conn:
-            conn.close()
         return jsonify({'error': 'Gagal mengambil data'}), 500
 
 @app.route('/delete-unknown', methods=['DELETE', 'OPTIONS'])
