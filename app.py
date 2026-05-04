@@ -41,27 +41,16 @@ JWT_EXPIRATION_HOURS = int(os.getenv("JWT_EXPIRATION_HOURS", 24))
 
 app = Flask(__name__)
 
-# ===================== KONFIGURASI CORS YANG BENAR =====================
-# Izinkan semua origin untuk development
-CORS(app, 
+# Baca allowed_origins dari env
+allowed_origins_str = os.getenv("ALLOWED_ORIGINS", "*")
+ALLOWED_ORIGINS = allowed_origins_str.split(",") if allowed_origins_str != "*" else "*"
+
+CORS(app,
     origins=ALLOWED_ORIGINS,
     methods=["GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"],
     allow_headers=["Content-Type", "Authorization", "X-API-Key", "X-Requested-With"],
     supports_credentials=False,
     max_age=86400)
-
-# ===================== HANDLE PREFLIGHT REQUEST MANUAL =====================
-@app.before_request
-def handle_preflight():
-    """Handle preflight OPTIONS request untuk semua route"""
-    if request.method == "OPTIONS":
-        response = jsonify({})
-        response.headers.add("Access-Control-Allow-Origin", ALLOWED_ORIGINS[0] if ALLOWED_ORIGINS else "*")
-        response.headers.add("Access-Control-Allow-Headers", "Content-Type, Authorization, X-API-Key, X-Requested-With")
-        response.headers.add("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS, PATCH")
-        response.headers.add("Access-Control-Allow-Credentials", "false")
-        response.headers.add("Access-Control-Max-Age", "86400")
-        return response, 200
 
 @app.route('/', defaults={'path': ''}, methods=['OPTIONS'])
 @app.route('/<path:path>', methods=['OPTIONS'])
