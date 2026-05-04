@@ -11,7 +11,6 @@ from flask_cors import CORS
 from dotenv import load_dotenv
 import bcrypt
 import jwt
-from psycopg2 import errors as psycopg2_errors
 
 # Load environment variables
 load_dotenv()
@@ -39,24 +38,22 @@ API_KEY_HEADER = "X-API-Key"
 JWT_SECRET_KEY = os.getenv("JWT_SECRET_KEY", "royal_resto_chatbot_secret_key_2024")
 JWT_EXPIRATION_HOURS = int(os.getenv("JWT_EXPIRATION_HOURS", 24))
 
+# ===================== Inisialisasi Flask =====================
 app = Flask(__name__)
+CORS(app, origins=ALLOWED_ORIGINS,
+     methods=["GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"],
+     allow_headers=["Content-Type", "Authorization", "X-API-Key", "X-Requested-With"],
+     supports_credentials=True,
+     max_age=86400)
 
-# ===================== MIDDLEWARE CORS MANUAL (WAJIB UNTUK VERCEL) =====================
-@app.after_request
-def add_cors_headers(response):
-    """
-    Tambahkan CORS headers ke setiap response.
-    Di Vercel, flask-cors sering gagal, maka kita paksa dengan middleware manual.
-    """
-    # Izinkan semua origin (bisa diubah nanti jika sudah berhasil)
-    response.headers['Access-Control-Allow-Origin'] = '*'
-    response.headers['Access-Control-Allow-Headers'] = 'Content-Type, Authorization, X-API-Key, X-Requested-With'
-    response.headers['Access-Control-Allow-Methods'] = 'GET, POST, PUT, DELETE, OPTIONS, PATCH'
-    response.headers['Access-Control-Allow-Credentials'] = 'false'
-    response.headers['Access-Control-Max-Age'] = '86400'
-    return response
+# ===================== Handler OPTIONS =====================
+@app.before_request
+def handle_preflight():
+    if request.method == "OPTIONS":
+        response = jsonify({})
+        response.status_code = 200
+        return response
 
-# Tangani semua request OPTIONS (preflight) langsung dengan response 200
 @app.route('/', defaults={'path': ''}, methods=['OPTIONS'])
 @app.route('/<path:path>', methods=['OPTIONS'])
 def options_handler(path):
@@ -718,81 +715,52 @@ def model_info():
 def get_all_data():
     if request.method == 'OPTIONS':
         return '', 200
+    page = request.args.get('page', 1, type=int)
+    per_page = request.args.get('per_page', 20, type=int)
+    search = request.args.get('search', '', type=str)
+    kategori_filter = request.args.get('kategori', '', type=str)
+    offset = (page - 1) * per_page
 
-    try:
-        # Ambil parameter query
-        page = request.args.get('page', 1, type=int)
-        per_page = request.args.get('per_page', 20, type=int)
-        search = request.args.get('search', '', type=str).strip()
-        kategori_filter = request.args.get('kategori', '', type=str).strip()
-        offset = (page - 1) * per_page
+    conn = get_db_connection()
+    if conn is None:
+        return jsonify({'error': 'Database tidak tersedia'}), 500
 
-        # Koneksi database
-        conn = get_db_connection()
-        if conn is None:
-            logger.error("Database connection failed in get-all-data")
-            return jsonify({'error': 'Database tidak tersedia'}), 500
-
-        cursor = get_db_cursor(conn, dictionary=True)
-
-        # Bangun query dasar
-        base_query = """
-            SELECT id, pertanyaan, jawaban, kategori
-            FROM dataset
-            WHERE 1=1
-        """
-        params = []
-
-        if search:
-            base_query += " AND pertanyaan ILIKE %s"
-            params.append(f"%{search}%")
-
-        if kategori_filter:
-            base_query += " AND kategori = %s"
-            params.append(kategori_filter)
-
-        # Hitung total data (tanpa LIMIT/OFFSET)
-        count_query = f"SELECT COUNT(*) as total FROM ({base_query}) AS sub"
-        cursor.execute(count_query, params)
-        total = cursor.fetchone()['total']
-        total_pages = (total + per_page - 1) // per_page if total > 0 else 1
-
-        # Query dengan pagination
-        query = base_query + " ORDER BY id LIMIT %s OFFSET %s"
-        cursor.execute(query, params + [per_page, offset])
-        rows = cursor.fetchall()
-
-        # Format data untuk frontend
-        data = []
-        for row in rows:
-            data.append({
-                'index': row['id'] - 1,      # Frontend menggunakan index 0-based
-                'id': row['id'],
-                'pertanyaan': row['pertanyaan'],
-                'jawaban': row['jawaban'],
-                'kategori': row['kategori']
-            })
-
-        cursor.close()
-        conn.close()
-
-        # Kirim response
-        return jsonify({
-            'page': page,
-            'per_page': per_page,
-            'total_data': total,
-            'total_pages': total_pages,
-            'data': data,
-            'categories': []   # Bisa diambil dari endpoint /kategori jika perlu
-        }), 200
-
-    except psycopg2_errors.UndefinedTable as e:
-        logger.error(f"Table 'dataset' does not exist: {e}")
-        return jsonify({'error': 'Tabel dataset belum dibuat di database. Jalankan migration SQL terlebih dahulu.'}), 500
-    except Exception as e:
-        logger.error(f"Unexpected error in get-all-data: {str(e)}")
-        logger.error(traceback.format_exc())
-        return jsonify({'error': f'Terjadi kesalahan: {str(e)}'}), 500
+    cursor = get_db_cursor(conn, dictionary=True)
+    base_query = "SELECT id, pertanyaan, jawaban, kategori FROM dataset WHERE 1=1"
+    params = []
+    if search:
+        base_query += " AND pertanyaan ILIKE %s"
+        params.append(f"%{search}%")
+    if kategori_filter:
+        base_query += " AND kategori = %s"
+        params.append(kategori_filter)
+    count_query = f"SELECT COUNT(*) as total FROM ({base_query}) as sub"
+    cursor.execute(count_query, params)
+    total = cursor.fetchone()['total']
+    total_pages = (total + per_page - 1) // per_page if total > 0 else 1
+    query = base_query + " ORDER BY id LIMIT %s OFFSET %s"
+    params.extend([per_page, offset])
+    cursor.execute(query, params)
+    rows = cursor.fetchall()
+    data = []
+    for row in rows:
+        data.append({
+            'index': row['id'] - 1,
+            'id': row['id'],
+            'pertanyaan': row['pertanyaan'],
+            'jawaban': row['jawaban'],
+            'kategori': row['kategori']
+        })
+    cursor.close()
+    conn.close()
+    return jsonify({
+        'page': page,
+        'per_page': per_page,
+        'total_data': total,
+        'total_pages': total_pages,
+        'data': data,
+        'categories': []  # Bisa diambil dari endpoint /kategori
+    }), 200
 
 @app.route('/tambah-data', methods=['POST', 'OPTIONS'])
 def tambah_data():
