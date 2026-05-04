@@ -517,6 +517,7 @@ def get_admin_profile():
     return jsonify({'admin': admin}), 200
 
 # ==================== KELOLA ADMIN ====================
+# ==================== KELOLA ADMIN ====================
 @app.route('/api/admins', methods=['GET', 'OPTIONS'])
 @token_required
 def get_all_admins():
@@ -531,7 +532,7 @@ def get_all_admins():
 
     conn = get_db_connection()
     if conn is None:
-        return jsonify({'data': [], 'total_data': 0, 'page': page, 'per_page': per_page, 'total_pages': 1}), 200
+        return jsonify({'error': 'Database tidak tersedia'}), 500
 
     cursor = get_db_cursor(conn, dictionary=True)
     base_query = "SELECT id, username, email, full_name, role, is_active, last_login, created_at FROM admin WHERE 1=1"
@@ -583,27 +584,33 @@ def create_admin():
 
     conn = get_db_connection()
     if conn is None:
-        return jsonify({'message': 'Admin berhasil dibuat (demo)', 'admin_id': 999}), 201
+        return jsonify({'error': 'Database tidak tersedia'}), 500
 
-    cursor = get_db_cursor(conn, dictionary=True)
-    cursor.execute("SELECT id FROM admin WHERE username = %s", (username,))
-    if cursor.fetchone():
+    cursor = conn.cursor()
+    try:
+        # Cek username
+        cursor.execute("SELECT id FROM admin WHERE username = %s", (username,))
+        if cursor.fetchone():
+            return jsonify({'error': 'Username sudah digunakan'}), 409
+        # Cek email
+        cursor.execute("SELECT id FROM admin WHERE email = %s", (email,))
+        if cursor.fetchone():
+            return jsonify({'error': 'Email sudah digunakan'}), 409
+        hashed = hash_password(password)
+        cursor.execute(
+            "INSERT INTO admin (username, password, email, full_name, role, is_active) VALUES (%s, %s, %s, %s, %s, %s) RETURNING id",
+            (username, hashed, email, full_name, role, is_active)
+        )
+        new_id = cursor.fetchone()[0]
+        conn.commit()
+        return jsonify({'message': 'Admin berhasil dibuat', 'admin_id': new_id}), 201
+    except Exception as e:
+        conn.rollback()
+        logger.error(f"Error creating admin: {e}")
+        return jsonify({'error': str(e)}), 500
+    finally:
         cursor.close()
         conn.close()
-        return jsonify({'error': 'Username sudah digunakan'}), 409
-    cursor.execute("SELECT id FROM admin WHERE email = %s", (email,))
-    if cursor.fetchone():
-        cursor.close()
-        conn.close()
-        return jsonify({'error': 'Email sudah digunakan'}), 409
-    hashed = hash_password(password)
-    cursor.execute("INSERT INTO admin (username, password, email, full_name, role, is_active) VALUES (%s, %s, %s, %s, %s, %s)",
-                   (username, hashed, email, full_name, role, is_active))
-    conn.commit()
-    new_id = cursor.lastrowid
-    cursor.close()
-    conn.close()
-    return jsonify({'message': 'Admin berhasil dibuat', 'admin_id': new_id}), 201
 
 @app.route('/api/admins/<int:admin_id>', methods=['PUT', 'OPTIONS'])
 @token_required
@@ -620,25 +627,29 @@ def update_admin(admin_id):
 
     conn = get_db_connection()
     if conn is None:
-        return jsonify({'message': 'Admin berhasil diupdate (demo)'}), 200
+        return jsonify({'error': 'Database tidak tersedia'}), 500
 
-    cursor = get_db_cursor(conn, dictionary=True)
-    cursor.execute("SELECT id FROM admin WHERE id = %s", (admin_id,))
-    if not cursor.fetchone():
+    cursor = conn.cursor()
+    try:
+        cursor.execute("SELECT id FROM admin WHERE id = %s", (admin_id,))
+        if not cursor.fetchone():
+            return jsonify({'error': 'Admin tidak ditemukan'}), 404
+        cursor.execute("SELECT id FROM admin WHERE email = %s AND id != %s", (email, admin_id))
+        if cursor.fetchone():
+            return jsonify({'error': 'Email sudah digunakan oleh admin lain'}), 409
+        cursor.execute(
+            "UPDATE admin SET email=%s, full_name=%s, role=%s, is_active=%s, updated_at=NOW() WHERE id=%s",
+            (email, full_name, role, is_active, admin_id)
+        )
+        conn.commit()
+        return jsonify({'message': 'Admin berhasil diupdate'}), 200
+    except Exception as e:
+        conn.rollback()
+        logger.error(f"Error updating admin: {e}")
+        return jsonify({'error': str(e)}), 500
+    finally:
         cursor.close()
         conn.close()
-        return jsonify({'error': 'Admin tidak ditemukan'}), 404
-    cursor.execute("SELECT id FROM admin WHERE email = %s AND id != %s", (email, admin_id))
-    if cursor.fetchone():
-        cursor.close()
-        conn.close()
-        return jsonify({'error': 'Email sudah digunakan'}), 409
-    cursor.execute("UPDATE admin SET email=%s, full_name=%s, role=%s, is_active=%s, updated_at=NOW() WHERE id=%s",
-                   (email, full_name, role, is_active, admin_id))
-    conn.commit()
-    cursor.close()
-    conn.close()
-    return jsonify({'message': 'Admin berhasil diupdate'}), 200
 
 @app.route('/api/admins/<int:admin_id>/reset-password', methods=['POST', 'OPTIONS'])
 @token_required
@@ -654,20 +665,24 @@ def reset_admin_password(admin_id):
 
     conn = get_db_connection()
     if conn is None:
-        return jsonify({'message': 'Password berhasil direset (demo)'}), 200
+        return jsonify({'error': 'Database tidak tersedia'}), 500
 
-    cursor = get_db_cursor(conn, dictionary=True)
-    cursor.execute("SELECT id FROM admin WHERE id = %s", (admin_id,))
-    if not cursor.fetchone():
+    cursor = conn.cursor()
+    try:
+        cursor.execute("SELECT id FROM admin WHERE id = %s", (admin_id,))
+        if not cursor.fetchone():
+            return jsonify({'error': 'Admin tidak ditemukan'}), 404
+        hashed = hash_password(new_password)
+        cursor.execute("UPDATE admin SET password=%s, updated_at=NOW() WHERE id=%s", (hashed, admin_id))
+        conn.commit()
+        return jsonify({'message': 'Password berhasil direset'}), 200
+    except Exception as e:
+        conn.rollback()
+        logger.error(f"Error resetting password: {e}")
+        return jsonify({'error': str(e)}), 500
+    finally:
         cursor.close()
         conn.close()
-        return jsonify({'error': 'Admin tidak ditemukan'}), 404
-    hashed = hash_password(new_password)
-    cursor.execute("UPDATE admin SET password=%s, updated_at=NOW() WHERE id=%s", (hashed, admin_id))
-    conn.commit()
-    cursor.close()
-    conn.close()
-    return jsonify({'message': 'Password berhasil direset'}), 200
 
 @app.route('/api/admins/<int:admin_id>', methods=['DELETE', 'OPTIONS'])
 @token_required
@@ -681,19 +696,23 @@ def delete_admin(admin_id):
 
     conn = get_db_connection()
     if conn is None:
-        return jsonify({'message': 'Admin berhasil dihapus (demo)'}), 200
+        return jsonify({'error': 'Database tidak tersedia'}), 500
 
-    cursor = get_db_cursor(conn, dictionary=True)
-    cursor.execute("SELECT id FROM admin WHERE id = %s", (admin_id,))
-    if not cursor.fetchone():
+    cursor = conn.cursor()
+    try:
+        cursor.execute("SELECT id FROM admin WHERE id = %s", (admin_id,))
+        if not cursor.fetchone():
+            return jsonify({'error': 'Admin tidak ditemukan'}), 404
+        cursor.execute("DELETE FROM admin WHERE id = %s", (admin_id,))
+        conn.commit()
+        return jsonify({'message': 'Admin berhasil dihapus'}), 200
+    except Exception as e:
+        conn.rollback()
+        logger.error(f"Error deleting admin: {e}")
+        return jsonify({'error': str(e)}), 500
+    finally:
         cursor.close()
         conn.close()
-        return jsonify({'error': 'Admin tidak ditemukan'}), 404
-    cursor.execute("DELETE FROM admin WHERE id = %s", (admin_id,))
-    conn.commit()
-    cursor.close()
-    conn.close()
-    return jsonify({'message': 'Admin berhasil dihapus'}), 200
 
 # ==================== UNKNOWN QUESTIONS ====================
 @app.route('/pertanyaan-unknown', methods=['GET', 'OPTIONS'])
