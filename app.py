@@ -1037,50 +1037,67 @@ def delete_data():
     if request.method == 'OPTIONS':
         return '', 200
 
-    # Tambahkan logging untuk debugging
-    logger.info(f"DELETE request received, raw data: {request.data}")
-    
+    # Parse JSON body
     try:
         data = request.get_json()
         if not data:
-            logger.error("No JSON body or invalid JSON")
-            return jsonify({'error': 'Invalid request body'}), 400
-        
-        index = data.get('index')
-        logger.info(f"Received index: {index}")
-        
-        if index is None:
-            return jsonify({'error': 'Index tidak ditemukan'}), 400
-        
-        # Konversi ke integer jika perlu
-        try:
-            index = int(index)
-        except (ValueError, TypeError):
-            return jsonify({'error': 'Index harus berupa angka'}), 400
+            return jsonify({'error': 'Request body tidak valid'}), 400
+    except Exception as e:
+        return jsonify({'error': f'Gagal parse JSON: {str(e)}'}), 400
 
-        conn = get_db_connection()
-        if conn is None:
-            return jsonify({'error': 'Database tidak tersedia'}), 500
+    index = data.get('index')
+    if index is None:
+        return jsonify({'error': 'Parameter "index" tidak ditemukan'}), 400
 
+    # Konversi ke integer
+    try:
+        index = int(index)
+    except (ValueError, TypeError):
+        return jsonify({'error': 'Index harus berupa angka'}), 400
+
+    conn = get_db_connection()
+    if conn is None:
+        return jsonify({'error': 'Database tidak tersedia'}), 500
+
+    try:
         # Ambil semua id dalam urutan
         cursor = get_db_cursor(conn, dictionary=True)
         cursor.execute("SELECT id FROM dataset ORDER BY id")
         ids = [row['id'] for row in cursor.fetchall()]
         cursor.close()
 
+        if not ids:
+            return jsonify({'error': 'Tidak ada data dalam database'}), 404
+
         if index < 0 or index >= len(ids):
-            return jsonify({'error': 'Index tidak valid'}), 400
+            return jsonify({
+                'error': f'Index {index} tidak valid. Total data: {len(ids)}',
+                'total_data': len(ids)
+            }), 400
 
         target_id = ids[index]
+        
+        # Hapus data
         cur = conn.cursor()
         cur.execute("DELETE FROM dataset WHERE id = %s", (target_id,))
         conn.commit()
+        affected = cur.rowcount
         cur.close()
         conn.close()
-        
-        return jsonify({'message': 'Data berhasil dihapus', 'status': 'success'}), 200
+
+        if affected == 0:
+            return jsonify({'error': 'Data tidak ditemukan'}), 404
+
+        return jsonify({
+            'message': 'Data berhasil dihapus',
+            'status': 'success',
+            'deleted_id': target_id
+        }), 200
+
     except Exception as e:
         logger.error(f"Error in delete_data: {e}")
+        if conn:
+            conn.close()
         return jsonify({'error': str(e)}), 500
 
 
