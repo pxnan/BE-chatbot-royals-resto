@@ -373,72 +373,16 @@ def login():
 
     conn = get_db_connection()
     if conn is None:
-        # Fallback untuk testing tanpa database (tidak menyimpan last_login)
+        # Fallback untuk testing tanpa database
         if username == 'admin' and password == 'admin123':
             token = generate_token(1, 'admin', 'super_admin')
             return jsonify({
                 'authenticated': True,
                 'token': token,
-                'admin': {
-                    'id': 1,
-                    'username': 'admin',
-                    'email': 'admin@royalsresto.com',
-                    'full_name': 'Administrator',
-                    'role': 'super_admin',
-                    'last_login': None,
-                    'created_at': None
-                },
+                'admin': {'id': 1, 'username': 'admin', 'email': 'admin@royalsresto.com', 'full_name': 'Administrator', 'role': 'super_admin'},
                 'expires_in': JWT_EXPIRATION_HOURS * 3600
             }), 200
         return jsonify({'error': 'Username atau password salah', 'authenticated': False}), 401
-
-    try:
-        cursor = get_db_cursor(conn, dictionary=True)
-        cursor.execute("SELECT id, username, password, email, full_name, role, is_active, last_login, created_at FROM admin WHERE username = %s", (username,))
-        admin = cursor.fetchone()
-        if not admin:
-            cursor.close()
-            conn.close()
-            return jsonify({'error': 'Username atau password salah', 'authenticated': False}), 401
-        if not admin['is_active']:
-            cursor.close()
-            conn.close()
-            return jsonify({'error': 'Akun Anda telah dinonaktifkan.', 'authenticated': False}), 401
-        if not verify_password(password, admin['password']):
-            cursor.close()
-            conn.close()
-            return jsonify({'error': 'Username atau password salah', 'authenticated': False}), 401
-
-        # Update last_login
-        update_cursor = conn.cursor()
-        update_cursor.execute("UPDATE admin SET last_login = NOW() WHERE id = %s", (admin['id'],))
-        conn.commit()
-        update_cursor.close()
-
-        # Ambil data terbaru setelah update
-        cursor.execute("SELECT id, username, email, full_name, role, is_active, last_login, created_at FROM admin WHERE id = %s", (admin['id'],))
-        admin = cursor.fetchone()
-        cursor.close()
-
-        # Konversi datetime ke string untuk response JSON
-        if admin.get('last_login'):
-            admin['last_login'] = admin['last_login'].strftime('%Y-%m-%d %H:%M:%S')
-        if admin.get('created_at'):
-            admin['created_at'] = admin['created_at'].strftime('%Y-%m-%d %H:%M:%S')
-
-        token = generate_token(admin['id'], admin['username'], admin['role'])
-        conn.close()
-        return jsonify({
-            'authenticated': True,
-            'token': token,
-            'admin': admin,
-            'expires_in': JWT_EXPIRATION_HOURS * 3600
-        }), 200
-    except Exception as e:
-        logger.error(f"Error in login: {e}")
-        if conn:
-            conn.close()
-        return jsonify({'error': 'Terjadi kesalahan saat login', 'authenticated': False}), 500
 
     cursor = get_db_cursor(conn, dictionary=True)
     cursor.execute("SELECT id, username, password, email, full_name, role, is_active FROM admin WHERE username = %s", (username,))
