@@ -24,7 +24,8 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 # ===================== Konfigurasi =====================
-DATABASE_URL = os.getenv("DATABASE_URL")
+# DATABASE_URL = os.getenv("DATABASE_URL")
+DATABASE_URL="postgresql://neondb_owner:npg_mRlXNj0HE3Lw@ep-restless-grass-ao5wjln6-pooler.c-2.ap-southeast-1.aws.neon.tech/neondb?channel_binding=require&sslmode=require"
 FLASK_ENV = os.getenv("FLASK_ENV", "production")
 FLASK_DEBUG = os.getenv("FLASK_DEBUG", "False").lower() == "true"
 FLASK_PORT = int(os.getenv("FLASK_PORT", 5000))
@@ -120,26 +121,18 @@ def get_client_ip():
 use_database = False
 db_conn = None
 
+
+# ===================== Database Connection =====================
 def get_db_connection():
-    global use_database
     if not DATABASE_URL:
-        logger.warning("DATABASE_URL not set, using CSV fallback")
+        logger.error("DATABASE_URL not set")
         return None
     try:
         import psycopg2
         from psycopg2.extras import RealDictCursor
-        # Tambahkan sslmode jika belum
-        url = DATABASE_URL
-        if "sslmode" not in url:
-            url += ("&" if "?" in url else "?") + "sslmode=require"
-        conn = psycopg2.connect(url)
-        conn.cursor().close()
-        logger.info("Database connection successful")
-        use_database = True
-        return conn
+        return psycopg2.connect(DATABASE_URL)
     except Exception as e:
         logger.error(f"Database connection failed: {e}")
-        use_database = False
         return None
 
 def get_db_cursor(conn, dictionary=True):
@@ -373,16 +366,72 @@ def login():
 
     conn = get_db_connection()
     if conn is None:
-        # Fallback untuk testing tanpa database
+        # Fallback untuk testing tanpa database (tidak menyimpan last_login)
         if username == 'admin' and password == 'admin123':
             token = generate_token(1, 'admin', 'super_admin')
             return jsonify({
                 'authenticated': True,
                 'token': token,
-                'admin': {'id': 1, 'username': 'admin', 'email': 'admin@royalsresto.com', 'full_name': 'Administrator', 'role': 'super_admin'},
+                'admin': {
+                    'id': 1,
+                    'username': 'admin',
+                    'email': 'admin@royalsresto.com',
+                    'full_name': 'Administrator',
+                    'role': 'super_admin',
+                    'last_login': None,
+                    'created_at': None
+                },
                 'expires_in': JWT_EXPIRATION_HOURS * 3600
             }), 200
         return jsonify({'error': 'Username atau password salah', 'authenticated': False}), 401
+
+    try:
+        cursor = get_db_cursor(conn, dictionary=True)
+        cursor.execute("SELECT id, username, password, email, full_name, role, is_active, last_login, created_at FROM admin WHERE username = %s", (username,))
+        admin = cursor.fetchone()
+        if not admin:
+            cursor.close()
+            conn.close()
+            return jsonify({'error': 'Username atau password salah', 'authenticated': False}), 401
+        if not admin['is_active']:
+            cursor.close()
+            conn.close()
+            return jsonify({'error': 'Akun Anda telah dinonaktifkan.', 'authenticated': False}), 401
+        if not verify_password(password, admin['password']):
+            cursor.close()
+            conn.close()
+            return jsonify({'error': 'Username atau password salah', 'authenticated': False}), 401
+
+        # Update last_login
+        update_cursor = conn.cursor()
+        update_cursor.execute("UPDATE admin SET last_login = NOW() WHERE id = %s", (admin['id'],))
+        conn.commit()
+        update_cursor.close()
+
+        # Ambil data terbaru setelah update
+        cursor.execute("SELECT id, username, email, full_name, role, is_active, last_login, created_at FROM admin WHERE id = %s", (admin['id'],))
+        admin = cursor.fetchone()
+        cursor.close()
+
+        # Konversi datetime ke string untuk response JSON
+        if admin.get('last_login'):
+            admin['last_login'] = admin['last_login'].strftime('%Y-%m-%d %H:%M:%S')
+        if admin.get('created_at'):
+            admin['created_at'] = admin['created_at'].strftime('%Y-%m-%d %H:%M:%S')
+
+        token = generate_token(admin['id'], admin['username'], admin['role'])
+        conn.close()
+        return jsonify({
+            'authenticated': True,
+            'token': token,
+            'admin': admin,
+            'expires_in': JWT_EXPIRATION_HOURS * 3600
+        }), 200
+    except Exception as e:
+        logger.error(f"Error in login: {e}")
+        if conn:
+            conn.close()
+        return jsonify({'error': 'Terjadi kesalahan saat login', 'authenticated': False}), 500
 
     cursor = get_db_cursor(conn, dictionary=True)
     cursor.execute("SELECT id, username, password, email, full_name, role, is_active FROM admin WHERE username = %s", (username,))
@@ -533,45 +582,57 @@ def get_all_admins():
 
     conn = get_db_connection()
     if conn is None:
-        logger.error("Database connection failed in get_all_admins")
         return jsonify({'error': 'Database tidak tersedia'}), 500
 
     try:
         cursor = get_db_cursor(conn, dictionary=True)
-        base_query = "SELECT id, username, email, full_name, role, is_active, last_login, created_at FROM admin WHERE 1=1"
+        # Pastikan kolom last_login dan created_at diambil
+        query = """
+            SELECT id, username, email, full_name, role, is_active, last_login, created_at
+            FROM admin
+        """
         params = []
         if search:
-            base_query += " AND (username ILIKE %s OR email ILIKE %s OR full_name ILIKE %s)"
+            query += " WHERE (username ILIKE %s OR email ILIKE %s OR full_name ILIKE %s)"
             sp = f"%{search}%"
             params.extend([sp, sp, sp])
-        query = base_query + " ORDER BY id DESC LIMIT %s OFFSET %s"
+        query += " ORDER BY id DESC LIMIT %s OFFSET %s"
         params.extend([per_page, offset])
         cursor.execute(query, params)
         admins = cursor.fetchall()
 
-        # Count total
-        count_query = "SELECT COUNT(*) as total FROM admin WHERE 1=1"
+        # Hitung total
+        count_query = "SELECT COUNT(*) as total FROM admin"
         if search:
-            count_query += " AND (username ILIKE %s OR email ILIKE %s OR full_name ILIKE %s)"
+            count_query += " WHERE (username ILIKE %s OR email ILIKE %s OR full_name ILIKE %s)"
             cursor.execute(count_query, [sp, sp, sp])
         else:
             cursor.execute(count_query)
         total = cursor.fetchone()['total']
         total_pages = (total + per_page - 1) // per_page
 
+        # Konversi datetime ke string
         for admin in admins:
             if admin.get('last_login'):
                 admin['last_login'] = admin['last_login'].strftime('%Y-%m-%d %H:%M:%S')
             if admin.get('created_at'):
                 admin['created_at'] = admin['created_at'].strftime('%Y-%m-%d %H:%M:%S')
+
         cursor.close()
         conn.close()
-        return jsonify({'page': page, 'per_page': per_page, 'total_data': total, 'total_pages': total_pages, 'data': admins}), 200
+        return jsonify({
+            'page': page,
+            'per_page': per_page,
+            'total_data': total,
+            'total_pages': total_pages,
+            'data': admins
+        }), 200
     except Exception as e:
         logger.error(f"Error in get_all_admins: {e}")
         if conn:
             conn.close()
-        return jsonify({'error': 'Terjadi kesalahan pada server'}), 500
+        return jsonify({'error': str(e)}), 500
+
 
 @app.route('/api/admins', methods=['POST', 'OPTIONS'])
 @token_required
@@ -596,16 +657,15 @@ def create_admin():
 
     conn = get_db_connection()
     if conn is None:
-        logger.error("Database connection failed in create_admin")
         return jsonify({'error': 'Database tidak tersedia'}), 500
 
     try:
         cursor = conn.cursor()
-        # Check username
+        # Cek username
         cursor.execute("SELECT id FROM admin WHERE username = %s", (username,))
         if cursor.fetchone():
             return jsonify({'error': 'Username sudah digunakan'}), 409
-        # Check email
+        # Cek email
         cursor.execute("SELECT id FROM admin WHERE email = %s", (email,))
         if cursor.fetchone():
             return jsonify({'error': 'Email sudah digunakan'}), 409
@@ -625,7 +685,8 @@ def create_admin():
         logger.error(f"Error creating admin: {e}")
         if conn:
             conn.close()
-        return jsonify({'error': 'Gagal membuat admin'}), 500
+        return jsonify({'error': str(e)}), 500
+
 
 @app.route('/api/admins/<int:admin_id>', methods=['PUT', 'OPTIONS'])
 @token_required
@@ -643,16 +704,15 @@ def update_admin(admin_id):
 
     conn = get_db_connection()
     if conn is None:
-        logger.error("Database connection failed in update_admin")
         return jsonify({'error': 'Database tidak tersedia'}), 500
 
     try:
         cursor = conn.cursor()
-        # Check admin exists
+        # Cek admin exists
         cursor.execute("SELECT id FROM admin WHERE id = %s", (admin_id,))
         if not cursor.fetchone():
             return jsonify({'error': 'Admin tidak ditemukan'}), 404
-        # Check email not used by others
+        # Cek email tidak digunakan admin lain
         cursor.execute("SELECT id FROM admin WHERE email = %s AND id != %s", (email, admin_id))
         if cursor.fetchone():
             return jsonify({'error': 'Email sudah digunakan oleh admin lain'}), 409
@@ -670,7 +730,8 @@ def update_admin(admin_id):
         logger.error(f"Error updating admin: {e}")
         if conn:
             conn.close()
-        return jsonify({'error': 'Gagal mengupdate admin'}), 500
+        return jsonify({'error': str(e)}), 500
+
 
 @app.route('/api/admins/<int:admin_id>/reset-password', methods=['POST', 'OPTIONS'])
 @token_required
@@ -687,7 +748,6 @@ def reset_admin_password(admin_id):
 
     conn = get_db_connection()
     if conn is None:
-        logger.error("Database connection failed in reset_password")
         return jsonify({'error': 'Database tidak tersedia'}), 500
 
     try:
@@ -707,7 +767,8 @@ def reset_admin_password(admin_id):
         logger.error(f"Error resetting password: {e}")
         if conn:
             conn.close()
-        return jsonify({'error': 'Gagal reset password'}), 500
+        return jsonify({'error': str(e)}), 500
+
 
 @app.route('/api/admins/<int:admin_id>', methods=['DELETE', 'OPTIONS'])
 @token_required
@@ -721,7 +782,6 @@ def delete_admin(admin_id):
 
     conn = get_db_connection()
     if conn is None:
-        logger.error("Database connection failed in delete_admin")
         return jsonify({'error': 'Database tidak tersedia'}), 500
 
     try:
@@ -740,42 +800,28 @@ def delete_admin(admin_id):
         logger.error(f"Error deleting admin: {e}")
         if conn:
             conn.close()
-        return jsonify({'error': 'Gagal menghapus admin'}), 500
+        return jsonify({'error': str(e)}), 500
 
 # ==================== UNKNOWN QUESTIONS ====================
 @app.route('/pertanyaan-unknown', methods=['GET', 'OPTIONS'])
 def get_unknown_questions():
     if request.method == 'OPTIONS':
         return '', 200
-    try:
-        page = request.args.get('page', 1, type=int)
-        per_page = request.args.get('per_page', 10, type=int)
-        offset = (page - 1) * per_page
-
-        conn = get_db_connection()
-        if conn is None:
-            logger.error("Database connection failed in get_unknown_questions")
-            return jsonify({'error': 'Database tidak tersedia'}), 500
-
-        cursor = get_db_cursor(conn, dictionary=True)
-        cursor.execute("SELECT * FROM pertanyaan_unknow ORDER BY id DESC LIMIT %s OFFSET %s", (per_page, offset))
-        data = cursor.fetchall()
-        cursor.execute("SELECT COUNT(*) as total FROM pertanyaan_unknow")
-        total = cursor.fetchone()['total']
-        cursor.close()
-        conn.close()
-
-        total_pages = (total + per_page - 1) // per_page
-        return jsonify({
-            'page': page,
-            'per_page': per_page,
-            'total_data': total,
-            'total_pages': total_pages,
-            'data': data
-        }), 200
-    except Exception as e:
-        logger.error(f"Error in get_unknown_questions: {e}")
-        return jsonify({'error': 'Gagal mengambil data'}), 500
+    page = request.args.get('page', 1, type=int)
+    per_page = 10
+    offset = (page - 1) * per_page
+    conn = get_db_connection()
+    if conn is None:
+        return jsonify({'data': [], 'total_data': 0, 'page': page, 'per_page': per_page, 'total_pages': 1}), 200
+    cursor = get_db_cursor(conn, dictionary=True)
+    cursor.execute("SELECT * FROM pertanyaan_unknow ORDER BY id DESC LIMIT %s OFFSET %s", (per_page, offset))
+    data = cursor.fetchall()
+    cursor.execute("SELECT COUNT(*) as total FROM pertanyaan_unknow")
+    total = cursor.fetchone()['total']
+    cursor.close()
+    conn.close()
+    total_pages = (total + per_page - 1) // per_page
+    return jsonify({'page': page, 'per_page': per_page, 'total_data': total, 'total_pages': total_pages, 'data': data}), 200
 
 @app.route('/delete-unknown', methods=['DELETE', 'OPTIONS'])
 def delete_unknown():
@@ -785,51 +831,33 @@ def delete_unknown():
     unknown_id = data.get('id')
     if not unknown_id:
         return jsonify({'error': 'ID tidak ditemukan'}), 400
-
     conn = get_db_connection()
     if conn is None:
-        return jsonify({'error': 'Database tidak tersedia'}), 500
-
-    try:
-        cursor = conn.cursor()
-        cursor.execute("DELETE FROM pertanyaan_unknow WHERE id = %s", (unknown_id,))
-        conn.commit()
-        affected = cursor.rowcount
-        cursor.close()
-        conn.close()
-        if affected == 0:
-            return jsonify({'error': 'Data tidak ditemukan'}), 404
-        return jsonify({'message': 'Pertanyaan berhasil dihapus', 'status': 'success'}), 200
-    except Exception as e:
-        logger.error(f"Error deleting unknown: {e}")
-        if conn:
-            conn.rollback()
-            conn.close()
-        return jsonify({'error': 'Gagal menghapus data'}), 500
+        return jsonify({'message': 'Pertanyaan berhasil dihapus (demo)'}), 200
+    cursor = conn.cursor()
+    cursor.execute("DELETE FROM pertanyaan_unknow WHERE id = %s", (unknown_id,))
+    conn.commit()
+    affected = cursor.rowcount
+    cursor.close()
+    conn.close()
+    if affected == 0:
+        return jsonify({'error': 'Data tidak ditemukan'}), 404
+    return jsonify({'message': 'Pertanyaan berhasil dihapus', 'status': 'success'}), 200
 
 @app.route('/delete-all-unknown', methods=['DELETE', 'OPTIONS'])
 def delete_all_unknown():
     if request.method == 'OPTIONS':
         return '', 200
-
     conn = get_db_connection()
     if conn is None:
-        return jsonify({'error': 'Database tidak tersedia'}), 500
-
-    try:
-        cursor = conn.cursor()
-        cursor.execute("DELETE FROM pertanyaan_unknow")
-        conn.commit()
-        affected = cursor.rowcount
-        cursor.close()
-        conn.close()
-        return jsonify({'message': f'{affected} pertanyaan berhasil dihapus', 'status': 'success', 'deleted_count': affected}), 200
-    except Exception as e:
-        logger.error(f"Error deleting all unknown: {e}")
-        if conn:
-            conn.rollback()
-            conn.close()
-        return jsonify({'error': 'Gagal menghapus semua data'}), 500
+        return jsonify({'message': 'Semua pertanyaan berhasil dihapus (demo)', 'deleted_count': 0}), 200
+    cursor = conn.cursor()
+    cursor.execute("DELETE FROM pertanyaan_unknow")
+    conn.commit()
+    affected = cursor.rowcount
+    cursor.close()
+    conn.close()
+    return jsonify({'message': f'{affected} pertanyaan berhasil dihapus', 'status': 'success', 'deleted_count': affected}), 200
 
 # ==================== KATEGORI & MODEL INFO (Database only) ====================
 @app.route('/kategori', methods=['GET', 'OPTIONS'])
@@ -854,6 +882,8 @@ def model_info():
     })
 
 # ==================== DATASET MANAGEMENT (Database only) ====================
+# ==================== DATASET MANAGEMENT (Database only) ====================
+
 @app.route('/get-all-data', methods=['GET', 'OPTIONS'])
 def get_all_data():
     if request.method == 'OPTIONS':
@@ -864,38 +894,53 @@ def get_all_data():
     kategori_filter = request.args.get('kategori', '', type=str)
     offset = (page - 1) * per_page
 
-    # Pastikan data sudah dimuat
-    load_models_and_data()
-    # Gunakan data dari pertanyaan_list, answers, kategori_list (sudah di-load dari DB atau CSV)
-    q_list = pertanyaan_list
-    a_list = answers
-    k_list = kategori_list
+    conn = get_db_connection()
+    if conn is None:
+        return jsonify({'error': 'Database tidak tersedia'}), 500
 
-    # Filter data berdasarkan search dan kategori
-    filtered = []
-    for i in range(len(q_list)):
-        p = q_list[i]
-        j = a_list[i] if i < len(a_list) else ''
-        k = k_list[i] if i < len(k_list) else 'umum'
-        if search and search.lower() not in p.lower():
-            continue
-        if kategori_filter and k != kategori_filter:
-            continue
-        filtered.append({'index': i, 'pertanyaan': p, 'jawaban': j, 'kategori': k})
+    try:
+        cursor = get_db_cursor(conn, dictionary=True)
+        base_query = "SELECT id, pertanyaan, jawaban, kategori FROM dataset WHERE 1=1"
+        params = []
+        if search:
+            base_query += " AND pertanyaan ILIKE %s"
+            params.append(f"%{search}%")
+        if kategori_filter:
+            base_query += " AND kategori = %s"
+            params.append(kategori_filter)
+        count_query = f"SELECT COUNT(*) as total FROM ({base_query}) as sub"
+        cursor.execute(count_query, params)
+        total = cursor.fetchone()['total']
+        total_pages = (total + per_page - 1) // per_page if total > 0 else 1
+        query = base_query + " ORDER BY id LIMIT %s OFFSET %s"
+        params.extend([per_page, offset])
+        cursor.execute(query, params)
+        rows = cursor.fetchall()
+        data = []
+        for row in rows:
+            data.append({
+                'index': row['id'] - 1,
+                'id': row['id'],
+                'pertanyaan': row['pertanyaan'],
+                'jawaban': row['jawaban'],
+                'kategori': row['kategori']
+            })
+        cursor.close()
+        conn.close()
+        return jsonify({
+            'page': page,
+            'per_page': per_page,
+            'total_data': total,
+            'total_pages': total_pages,
+            'data': data,
+            'categories': []
+        }), 200
+    except Exception as e:
+        logger.error(f"Error in get_all_data: {e}")
+        if conn:
+            conn.close()
+        return jsonify({'error': str(e)}), 500
 
-    total = len(filtered)
-    total_pages = (total + per_page - 1) // per_page if total > 0 else 1
-    data_page = filtered[offset:offset + per_page]
-    # Ambil kategori unik dari seluruh dataset
-    categories = sorted(list(set(k_list)))
-    return jsonify({
-        'page': page,
-        'per_page': per_page,
-        'total_data': total,
-        'total_pages': total_pages,
-        'data': data_page,
-        'categories': categories
-    }), 200    
 
 @app.route('/tambah-data', methods=['POST', 'OPTIONS'])
 def tambah_data():
@@ -908,35 +953,33 @@ def tambah_data():
     if not pertanyaan or not jawaban or not kategori:
         return jsonify({'error': 'Semua field harus diisi'}), 400
 
-    # Cek duplikat
-    if pertanyaan.lower() in [p.lower() for p in pertanyaan_list]:
-        return jsonify({'error': f'Pertanyaan "{pertanyaan}" sudah ada', 'status': 'duplicate'}), 409
-
-    # Simpan ke struktur data global
-    pertanyaan_list.append(pertanyaan)
-    answers.append(jawaban)
-    kategori_list.append(kategori)
-
-    # Jika database aktif, sinkronkan
     conn = get_db_connection()
-    if conn:
-        try:
-            cursor = conn.cursor()
-            cursor.execute("INSERT INTO dataset (pertanyaan, jawaban, kategori) VALUES (%s, %s, %s)", (pertanyaan, jawaban, kategori))
-            conn.commit()
-            cursor.close()
-            conn.close()
-        except Exception as e:
-            logger.error(f"Failed to insert to DB: {e}")
-    else:
-        # Simpan ke CSV
-        save_dataset_to_csv(pertanyaan_list, answers, kategori_list)
+    if conn is None:
+        return jsonify({'error': 'Database tidak tersedia'}), 500
 
-    return jsonify({
-        'message': 'Data berhasil ditambahkan',
-        'data': {'pertanyaan': pertanyaan, 'jawaban': jawaban, 'kategori': kategori},
-        'status': 'success'
-    }), 201
+    try:
+        cursor = conn.cursor()
+        # Cek duplikat
+        cursor.execute("SELECT id FROM dataset WHERE pertanyaan ILIKE %s", (pertanyaan,))
+        if cursor.fetchone():
+            return jsonify({'error': f'Pertanyaan "{pertanyaan}" sudah ada', 'status': 'duplicate'}), 409
+        cursor.execute("INSERT INTO dataset (pertanyaan, jawaban, kategori) VALUES (%s, %s, %s)",
+                       (pertanyaan, jawaban, kategori))
+        conn.commit()
+        cursor.close()
+        conn.close()
+        return jsonify({
+            'message': 'Data berhasil ditambahkan',
+            'data': {'pertanyaan': pertanyaan, 'jawaban': jawaban, 'kategori': kategori},
+            'status': 'success'
+        }), 201
+    except Exception as e:
+        conn.rollback()
+        logger.error(f"Error in tambah_data: {e}")
+        if conn:
+            conn.close()
+        return jsonify({'error': str(e)}), 500
+
 
 @app.route('/update-data', methods=['PUT', 'OPTIONS'])
 def update_data():
@@ -946,8 +989,6 @@ def update_data():
     index = data.get('index')
     if index is None:
         return jsonify({'error': 'Index tidak ditemukan'}), 400
-    if index < 0 or index >= len(pertanyaan_list):
-        return jsonify({'error': 'Index tidak valid'}), 400
 
     pertanyaan = data.get('pertanyaan', '').strip()
     jawaban = data.get('jawaban', '').strip()
@@ -955,32 +996,34 @@ def update_data():
     if not pertanyaan or not jawaban or not kategori:
         return jsonify({'error': 'Semua field harus diisi'}), 400
 
-    # Update di memori
-    pertanyaan_list[index] = pertanyaan
-    answers[index] = jawaban
-    kategori_list[index] = kategori
-
-    # Sinkron ke database jika aktif
     conn = get_db_connection()
-    if conn:
-        try:
-            cursor = get_db_cursor(conn, dictionary=True)
-            cursor.execute("SELECT id FROM dataset ORDER BY id")
-            ids = [row['id'] for row in cursor.fetchall()]
-            if index < len(ids):
-                target_id = ids[index]
-                cursor = conn.cursor()
-                cursor.execute("UPDATE dataset SET pertanyaan=%s, jawaban=%s, kategori=%s WHERE id=%s",
-                               (pertanyaan, jawaban, kategori, target_id))
-                conn.commit()
-                cursor.close()
-            conn.close()
-        except Exception as e:
-            logger.error(f"Failed to update DB: {e}")
-    else:
-        save_dataset_to_csv(pertanyaan_list, answers, kategori_list)
+    if conn is None:
+        return jsonify({'error': 'Database tidak tersedia'}), 500
 
-    return jsonify({'message': 'Data berhasil diupdate', 'status': 'success'}), 200
+    try:
+        # Dapatkan id berdasarkan urutan (index)
+        cursor = get_db_cursor(conn, dictionary=True)
+        cursor.execute("SELECT id FROM dataset ORDER BY id")
+        ids = [row['id'] for row in cursor.fetchall()]
+        cursor.close()
+        if index < 0 or index >= len(ids):
+            return jsonify({'error': 'Index tidak valid'}), 400
+        target_id = ids[index]
+
+        cursor = conn.cursor()
+        cursor.execute("UPDATE dataset SET pertanyaan=%s, jawaban=%s, kategori=%s WHERE id=%s",
+                       (pertanyaan, jawaban, kategori, target_id))
+        conn.commit()
+        cursor.close()
+        conn.close()
+        return jsonify({'message': 'Data berhasil diupdate', 'status': 'success'}), 200
+    except Exception as e:
+        conn.rollback()
+        logger.error(f"Error in update_data: {e}")
+        if conn:
+            conn.close()
+        return jsonify({'error': str(e)}), 500
+
 
 @app.route('/delete-data', methods=['DELETE', 'OPTIONS'])
 def delete_data():
@@ -990,33 +1033,32 @@ def delete_data():
     index = data.get('index')
     if index is None:
         return jsonify({'error': 'Index tidak ditemukan'}), 400
-    if index < 0 or index >= len(pertanyaan_list):
-        return jsonify({'error': 'Index tidak valid'}), 400
-
-    # Hapus dari memori
-    del pertanyaan_list[index]
-    del answers[index]
-    del kategori_list[index]
 
     conn = get_db_connection()
-    if conn:
-        try:
-            cursor = get_db_cursor(conn, dictionary=True)
-            cursor.execute("SELECT id FROM dataset ORDER BY id")
-            ids = [row['id'] for row in cursor.fetchall()]
-            if index < len(ids):
-                target_id = ids[index]
-                cursor = conn.cursor()
-                cursor.execute("DELETE FROM dataset WHERE id=%s", (target_id,))
-                conn.commit()
-                cursor.close()
-            conn.close()
-        except Exception as e:
-            logger.error(f"Failed to delete from DB: {e}")
-    else:
-        save_dataset_to_csv(pertanyaan_list, answers, kategori_list)
+    if conn is None:
+        return jsonify({'error': 'Database tidak tersedia'}), 500
 
-    return jsonify({'message': 'Data berhasil dihapus', 'status': 'success'}), 200
+    try:
+        cursor = get_db_cursor(conn, dictionary=True)
+        cursor.execute("SELECT id FROM dataset ORDER BY id")
+        ids = [row['id'] for row in cursor.fetchall()]
+        cursor.close()
+        if index < 0 or index >= len(ids):
+            return jsonify({'error': 'Index tidak valid'}), 400
+        target_id = ids[index]
+
+        cursor = conn.cursor()
+        cursor.execute("DELETE FROM dataset WHERE id=%s", (target_id,))
+        conn.commit()
+        cursor.close()
+        conn.close()
+        return jsonify({'message': 'Data berhasil dihapus', 'status': 'success'}), 200
+    except Exception as e:
+        conn.rollback()
+        logger.error(f"Error in delete_data: {e}")
+        if conn:
+            conn.close()
+        return jsonify({'error': str(e)}), 500
 
 
 @app.route('/delete-bulk-data', methods=['DELETE', 'OPTIONS'])
@@ -1028,38 +1070,35 @@ def delete_bulk_data():
     if not indices:
         return jsonify({'error': 'Tidak ada index yang dipilih'}), 400
 
-    # Pastikan data sudah dimuat
-    load_models_and_data()
-    global pertanyaan_list, answers, kategori_list
-
-    # Validasi index
-    if any(idx < 0 or idx >= len(pertanyaan_list) for idx in indices):
-        return jsonify({'error': 'Salah satu index tidak valid'}), 400
-
-    # Hapus dari index terbesar ke terkecil agar tidak mengganggu urutan
-    for idx in sorted(indices, reverse=True):
-        del pertanyaan_list[idx]
-        del answers[idx]
-        del kategori_list[idx]
-
-    # Sinkronkan ke database jika tersedia, jika tidak ke CSV
     conn = get_db_connection()
-    if conn:
-        try:
-            cursor = conn.cursor()
-            # Hapus semua data lalu insert ulang (cara sederhana)
-            cursor.execute("TRUNCATE TABLE dataset RESTART IDENTITY")
-            for q, a, k in zip(pertanyaan_list, answers, kategori_list):
-                cursor.execute("INSERT INTO dataset (pertanyaan, jawaban, kategori) VALUES (%s, %s, %s)", (q, a, k))
-            conn.commit()
-            cursor.close()
-            conn.close()
-        except Exception as e:
-            logger.error(f"Failed to sync bulk delete to DB: {e}")
-    else:
-        save_dataset_to_csv(pertanyaan_list, answers, kategori_list)
+    if conn is None:
+        return jsonify({'error': 'Database tidak tersedia'}), 500
 
-    return jsonify({'message': f'{len(indices)} data berhasil dihapus', 'status': 'success'}), 200
+    try:
+        cursor = get_db_cursor(conn, dictionary=True)
+        cursor.execute("SELECT id FROM dataset ORDER BY id")
+        ids = [row['id'] for row in cursor.fetchall()]
+        cursor.close()
+
+        to_delete = []
+        for idx in indices:
+            if 0 <= idx < len(ids):
+                to_delete.append(ids[idx])
+        if not to_delete:
+            return jsonify({'error': 'Tidak ada data valid'}), 400
+
+        cursor = conn.cursor()
+        cursor.execute("DELETE FROM dataset WHERE id = ANY(%s)", (to_delete,))
+        conn.commit()
+        cursor.close()
+        conn.close()
+        return jsonify({'message': f'{len(to_delete)} data berhasil dihapus', 'status': 'success'}), 200
+    except Exception as e:
+        conn.rollback()
+        logger.error(f"Error in delete_bulk_data: {e}")
+        if conn:
+            conn.close()
+        return jsonify({'error': str(e)}), 500
 
 # ==================== TRAINING MODEL ====================
 @app.route('/train-model', methods=['POST', 'OPTIONS'])
@@ -1122,16 +1161,30 @@ def cek_csv():
     if request.method == 'OPTIONS':
         return '', 200
     try:
-        with open(csv_path, 'r', encoding='utf-8') as f:
-            lines = f.readlines()
-        rows = list(csv.reader(lines))
+        conn = get_db_connection()
+        if conn is None:
+            return jsonify({'error': 'Database tidak tersedia'}), 500
+
+        cursor = get_db_cursor(conn, dictionary=True)
+        # Ambil 5 data terbaru berdasarkan id (descending)
+        cursor.execute("SELECT pertanyaan, jawaban, kategori FROM dataset ORDER BY id DESC LIMIT 5")
+        rows = cursor.fetchall()
+        cursor.close()
+        conn.close()
+
+        # Format yang diharapkan frontend: array dengan header sebagai baris pertama
+        header = ['pertanyaan', 'jawaban', 'kategori']
+        data_rows = [[row['pertanyaan'], row['jawaban'], row['kategori']] for row in rows]
+        all_rows = [header] + data_rows  # Baris pertama header
+
         return jsonify({
-            'total_lines': len(lines),
-            'total_rows': len(rows),
-            'last_5_rows': rows[-5:] if len(rows) >= 5 else rows,
-            'file_path': csv_path
-        })
+            'total_lines': len(all_rows),
+            'total_rows': len(all_rows),
+            'last_5_rows': all_rows,
+            'file_path': 'database'
+        }), 200
     except Exception as e:
+        logger.error(f"Error in cek_csv: {e}")
         return jsonify({'error': str(e)}), 500
 
 @app.route('/fix-csv', methods=['POST', 'OPTIONS'])
@@ -1349,6 +1402,16 @@ def reset_database():
     cursor.close()
     conn.close()
     return jsonify({'message': 'Database berhasil direset', 'deleted_unknown_questions': deleted}), 200
+
+@app.route('/test-db')
+def test_db():
+    import psycopg2
+    try:
+        conn = psycopg2.connect(DATABASE_URL)
+        conn.close()
+        return "DB OK"
+    except Exception as e:
+        return str(e)
 
 # ==================== Global Error Handler ====================
 @app.errorhandler(Exception)
