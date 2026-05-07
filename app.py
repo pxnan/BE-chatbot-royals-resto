@@ -278,7 +278,7 @@ def health():
     return jsonify({'status': 'healthy', 'timestamp': datetime.now().isoformat()})
 
 @app.route('/chat', methods=['POST', 'OPTIONS'])
-@api_key_required
+# @api_key_required
 def chat():
     if request.method == 'OPTIONS':
         return '', 200
