@@ -9,3 +9,4 @@ numpy
 Werkzeug
 Sastrawi
 gunicorn
+psycopg2-binary

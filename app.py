@@ -25,7 +25,7 @@ logger = logging.getLogger(__name__)
 
 # ===================== Konfigurasi =====================
 # DATABASE_URL = os.getenv("DATABASE_URL")
-DATABASE_URL="postgresql://neondb_owner:npg_mRlXNj0HE3Lw@ep-restless-grass-ao5wjln6-pooler.c-2.ap-southeast-1.aws.neon.tech/neondb?channel_binding=require&sslmode=require"
+DATABASE_URL=os.getenv("DATABASE_URL", "postgresql://neondb_owner:npg_mRlXNj0HE3Lw@ep-restless-grass-ao5wjln6.c-2.ap-southeast-1.aws.neon.tech/neondb?channel_binding=require&sslmode=require")
 FLASK_ENV = os.getenv("FLASK_ENV", "production")
 FLASK_DEBUG = os.getenv("FLASK_DEBUG", "False").lower() == "true"
 FLASK_PORT = int(os.getenv("FLASK_PORT", 5000))
@@ -125,12 +125,19 @@ db_conn = None
 # ===================== Database Connection =====================
 def get_db_connection():
     if not DATABASE_URL:
-        logger.error("DATABASE_URL not set")
+        logger.error("DATABASE_URL is not set")
         return None
     try:
         import psycopg2
-        from psycopg2.extras import RealDictCursor
-        return psycopg2.connect(DATABASE_URL)
+        conn = psycopg2.connect(DATABASE_URL, connect_timeout=10)
+        # Test connection
+        with conn.cursor() as cur:
+            cur.execute("SELECT 1")
+        logger.info("Database connection successful")
+        return conn
+    except psycopg2.OperationalError as e:
+        logger.error(f"OperationalError: {e}")
+        return None
     except Exception as e:
         logger.error(f"Database connection failed: {e}")
         return None
@@ -1209,6 +1216,20 @@ def fix_csv():
         return jsonify({'message': 'CSV berhasil diperbaiki dari database', 'total_rows': len(rows)})
     except Exception as e:
         return jsonify({'error': str(e)}), 500
+    
+@app.route('/debug-db')
+def debug_db():
+    import os
+    url = os.getenv("DATABASE_URL")
+    if not url:
+        return "ERROR: DATABASE_URL not set in environment"
+    try:
+        import psycopg2
+        conn = psycopg2.connect(url, connect_timeout=5)
+        conn.close()
+        return f"SUCCESS: Connected to database using URL: {url[:50]}..."
+    except Exception as e:
+        return f"FAILED: {str(e)}"
 
 # ==================== ADDITIONAL ENDPOINTS ====================
 @app.route('/get-data/<int:index>', methods=['GET', 'OPTIONS'])
