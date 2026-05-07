@@ -1510,6 +1510,22 @@ def test_db():
         return "DB OK"
     except Exception as e:
         return str(e)
+    
+@app.route('/debug-headers', methods=['GET'])
+def debug_headers():
+    # Cetak semua header yang diterima ke log Vercel (untuk inspeksi)
+    print("=== INCOMING HEADERS ===")
+    for key, value in request.headers.items():
+        print(f"{key}: {value}")
+    
+    # Kembalikan headers sebagai respons JSON agar bisa dilihat di browser
+    return jsonify({
+        "message": "Cek logs Vercel untuk detail lengkap, ini hanya contoh.",
+        "origin": request.headers.get('Origin', 'Tidak ada origin'),
+        "user_agent": request.headers.get('User-Agent', 'Tidak ada user-agent'),
+        "host": request.headers.get('Host', 'Tidak ada host'),
+        "x-forwarded-for": request.headers.get('X-Forwarded-For', 'Tidak ada info IP'),
+    }), 200
 
 # ==================== Global Error Handler ====================
 @app.errorhandler(Exception)
