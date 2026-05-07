@@ -1038,49 +1038,54 @@ def delete_data():
         return '', 200
 
     data = request.json or {}
-    index = data.get('index')
-    if index is None:
-        return jsonify({'error': 'Index tidak ditemukan'}), 400
+    # Prioritaskan 'id'
+    item_id = data.get('id')
+    if item_id is None:
+        # fallback ke index (untuk kompatibilitas sementara)
+        index = data.get('index')
+        if index is not None:
+            conn = get_db_connection()
+            if not conn:
+                return jsonify({'error': 'Database tidak tersedia'}), 500
+            cursor = conn.cursor()
+            cursor.execute("SELECT id FROM dataset ORDER BY id")
+            ids = [row[0] for row in cursor.fetchall()]
+            cursor.close()
+            conn.close()
+            try:
+                idx = int(index)
+                if 0 <= idx < len(ids):
+                    item_id = ids[idx]
+                else:
+                    return jsonify({'error': f'Index {idx} tidak valid (0-{len(ids)-1})'}), 400
+            except:
+                return jsonify({'error': 'Index harus angka'}), 400
+        else:
+            return jsonify({'error': 'Parameter "id" atau "index" diperlukan'}), 400
 
-    # Validasi index harus integer
     try:
-        index = int(index)
-    except (ValueError, TypeError):
-        return jsonify({'error': 'Index harus berupa angka'}), 400
+        item_id = int(item_id)
+    except:
+        return jsonify({'error': 'ID harus angka'}), 400
 
     conn = get_db_connection()
-    if conn is None:
+    if not conn:
         return jsonify({'error': 'Database tidak tersedia'}), 500
 
     try:
-        cursor = conn.cursor()
-        # Ambil semua id berdasarkan urutan (ascending)
-        cursor.execute("SELECT id FROM dataset ORDER BY id")
-        ids = [row[0] for row in cursor.fetchall()]
-
-        if index < 0 or index >= len(ids):
-            cursor.close()
-            conn.close()
-            return jsonify({'error': f'Index {index} tidak valid. Total data: {len(ids)}'}), 400
-
-        target_id = ids[index]
-        cursor.execute("DELETE FROM dataset WHERE id = %s", (target_id,))
+        cur = conn.cursor()
+        cur.execute("DELETE FROM dataset WHERE id = %s", (item_id,))
         conn.commit()
-        cursor.close()
+        affected = cur.rowcount
+        cur.close()
         conn.close()
 
-        # (Opsional) Refresh dataset memory jika menggunakan variabel global
-        # refresh_dataset_memory()  # panggil jika ada fungsi refresh
+        if affected == 0:
+            return jsonify({'error': f'Data dengan ID {item_id} tidak ditemukan'}), 404
 
-        return jsonify({
-            'message': 'Data berhasil dihapus',
-            'status': 'success',
-            'deleted_id': target_id
-        }), 200
+        return jsonify({'message': 'Data berhasil dihapus', 'status': 'success', 'deleted_id': item_id}), 200
     except Exception as e:
-        logger.error(f"Error in delete_data: {e}")
-        if conn:
-            conn.close()
+        logger.error(f"Delete error: {e}")
         return jsonify({'error': str(e)}), 500
 
 
