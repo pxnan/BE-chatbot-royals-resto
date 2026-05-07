@@ -25,7 +25,7 @@ logger = logging.getLogger(__name__)
 
 # ===================== Konfigurasi =====================
 # DATABASE_URL = os.getenv("DATABASE_URL")
-DATABASE_URL=os.getenv("DATABASE_URL", "postgresql://neondb_owner:npg_mRlXNj0HE3Lw@ep-restless-grass-ao5wjln6.c-2.ap-southeast-1.aws.neon.tech/neondb?channel_binding=require&sslmode=require")
+DATABASE_URL="postgresql://neondb_owner:npg_mRlXNj0HE3Lw@ep-restless-grass-ao5wjln6.c-2.ap-southeast-1.aws.neon.tech/neondb?channel_binding=require&sslmode=require"
 FLASK_ENV = os.getenv("FLASK_ENV", "production")
 FLASK_DEBUG = os.getenv("FLASK_DEBUG", "False").lower() == "true"
 FLASK_PORT = int(os.getenv("FLASK_PORT", 5000))
